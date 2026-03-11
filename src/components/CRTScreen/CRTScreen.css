@@ -1,0 +1,69 @@
+.crt-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg);
+  border-radius: 12px;
+}
+
+/* Vignette — darkens edges like a real CRT */
+.crt-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 60%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+  pointer-events: none;
+  z-index: 12;
+}
+
+/* Content layer */
+.crt-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  text-shadow:
+    0 0 5px rgba(255, 176, 0, 0.5),
+    0 0 10px rgba(255, 176, 0, 0.2);
+}
+
+/* Scanlines — horizontal lines across the screen */
+.crt-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    var(--color-scanline) 2px,
+    var(--color-scanline) 4px
+  );
+}
+
+/* Flicker — subtle phosphor variance */
+@keyframes flicker {
+  0%   { opacity: 0.02; }
+  5%   { opacity: 0.04; }
+  10%  { opacity: 0.02; }
+  15%  { opacity: 0.03; }
+  20%  { opacity: 0.02; }
+  50%  { opacity: 0.03; }
+  100% { opacity: 0.02; }
+}
+
+.crt-flicker {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 11;
+  background: var(--color-primary);
+  animation: flicker 0.15s infinite;
+}

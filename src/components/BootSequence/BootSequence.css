@@ -1,0 +1,24 @@
+.boot-sequence {
+  padding: 40px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--color-primary);
+  line-height: 1.6;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.boot-line {
+  white-space: pre;
+}
+
+@keyframes boot-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.boot-cursor {
+  animation: boot-blink 1s step-end infinite;
+}

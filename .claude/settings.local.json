@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create vite@latest . -- --template react)",
+      "Bash(node -e \"const fs=require\\(''fs''\\);const d=JSON.parse\\(fs.readFileSync\\(''/c/Users/Alex/.claude/projects/C--Projects-NewWebsite/05d7ff0f-fa7f-4e56-a957-3ce39fe7692b/tool-results/toolu_013HnpuDinBsTjLTYJ3SJYai.json'',''utf8''\\)\\);console.log\\(d[0].text.substring\\(0,10000\\)\\)\")",
+      "Bash(node node_modules/.bin/npm install)",
+      "Bash(npm install)",
+      "Bash(echo $ANTHROPIC_API_KEY)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm install tone)",
+      "Bash(curl -s -X POST http://localhost:3001/api/chat -H \"Content-Type: application/json\" -d '{\"message\":\"hello\",\"room\":\"grand_hall\",\"history\":[],\"gameState\":{\"phase\":\"playing\",\"flags\":{}}}' 2>&1)",
+      "Bash(node --env-file=.env -e \"console.log\\('Key exists:', !!process.env.ANTHROPIC_API_KEY\\); console.log\\('Key prefix:', process.env.ANTHROPIC_API_KEY?.substring\\(0, 10\\)\\)\")"
+    ]
+  }
+}

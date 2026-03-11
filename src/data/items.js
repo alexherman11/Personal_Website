@@ -1,0 +1,68 @@
+const items = {
+  golden_compass: {
+    id: 'golden_compass',
+    name: 'Golden Compass',
+    icon: '\u2638',
+    description: 'A compass of tarnished gold. The needle spins slowly, never settling on a direction. It feels heavier than it should.',
+    realLink: null,
+    isVaultClue: true,
+  },
+  dusty_tome: {
+    id: 'dusty_tome',
+    name: 'Dusty Tome',
+    icon: '\uD83D\uDCD6',
+    description: 'A thick volume titled "On the Nature of Minds." The pages smell of centuries and certainty.',
+    realLink: null,
+    isVaultClue: true,
+  },
+  blueprints: {
+    id: 'blueprints',
+    name: 'Set of Blueprints',
+    icon: '\uD83D\uDCDC',
+    description: 'Detailed architectural drawings — a life\'s work in meticulous script. Schematics, timelines, annotations in the margins.',
+    realLink: '/pdf/resume.pdf',
+    isVaultClue: false,
+  },
+  strange_gear: {
+    id: 'strange_gear',
+    name: 'Strange Gear',
+    icon: '\u2699',
+    description: 'A gear that doesn\'t fit any mechanism you\'ve seen. Its teeth are machined to impossible precision.',
+    realLink: null,
+    isVaultClue: true,
+  },
+  sealed_letter: {
+    id: 'sealed_letter',
+    name: 'Sealed Letter',
+    icon: '\u2709',
+    description: 'A sealed letter bearing no address. The wax seal is warm to the touch, as though freshly pressed.',
+    realLink: '/pdf/resume.pdf',
+    isVaultClue: false,
+  },
+  radio_crystal: {
+    id: 'radio_crystal',
+    name: 'Radio Crystal',
+    icon: '\uD83D\uDD2E',
+    description: 'A small crystal that hums faintly when held near anything electronic. It resonates at a frequency just below hearing.',
+    realLink: null,
+    isVaultClue: true,
+  },
+  paracord: {
+    id: 'paracord',
+    name: 'Length of Paracord',
+    icon: '\u27B0',
+    description: 'A sturdy length of paracord. Well-worn but strong. The kind of rope that has held weight and weathered storms.',
+    realLink: null,
+    isVaultClue: false,
+  },
+  iron_key: {
+    id: 'iron_key',
+    name: 'Iron Key',
+    icon: '\uD83D\uDD11',
+    description: 'A heavy iron key, cold to the touch and dark with age. Made for a very specific lock.',
+    realLink: null,
+    isVaultClue: false,
+  },
+}
+
+export default items

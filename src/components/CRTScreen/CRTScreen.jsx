@@ -1,0 +1,15 @@
+import MuteToggle from '../MuteToggle/MuteToggle'
+import './CRTScreen.css'
+
+export default function CRTScreen({ children, muted, onToggleMute }) {
+  return (
+    <div className="crt-screen">
+      <div className="crt-content">
+        {children}
+      </div>
+      <MuteToggle muted={muted} onToggle={onToggleMute} />
+      <div className="crt-scanlines" />
+      <div className="crt-flicker" />
+    </div>
+  )
+}
