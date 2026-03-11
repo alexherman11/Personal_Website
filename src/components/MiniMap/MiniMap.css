@@ -55,6 +55,11 @@
   animation: mini-map-blink 1s step-end infinite;
 }
 
+.mini-map__room--branched {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 2px var(--color-primary);
+}
+
 @keyframes mini-map-blink {
   0%, 49% { opacity: 1; }
   50%, 100% { opacity: 0.3; }

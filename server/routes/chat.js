@@ -1,9 +1,5 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { getClient } from '../auth/claudeAuth.js'
 import assembleSystemPrompt from '../prompts/assemblePrompt.js'
-
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
 
 export default async function chatRoute(req, res) {
   const { message, gameState } = req.body
@@ -27,9 +23,10 @@ export default async function chatRoute(req, res) {
     }
     messages.push({ role: 'user', content: message })
 
+    const client = await getClient()
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 400,
+      max_tokens: 600,
       system: systemPrompt,
       messages,
     })
@@ -83,6 +80,31 @@ export default async function chatRoute(req, res) {
       }
     }
 
+    // Validate and sanitize createRoom if present
+    if (stateChanges.createRoom) {
+      const cr = stateChanges.createRoom
+      if (!cr.id || !cr.name || !cr.description || !cr.exitDirection || !cr.returnDirection) {
+        stateChanges.createRoom = null
+      } else {
+        stateChanges.createRoom = {
+          id: String(cr.id).replace(/[^a-z0-9_]/g, '').slice(0, 40),
+          name: String(cr.name).slice(0, 60),
+          description: Array.isArray(cr.description)
+            ? cr.description.map(l => String(l).slice(0, 300)).slice(0, 6)
+            : [String(cr.description).slice(0, 300)],
+          exitDirection: String(cr.exitDirection).slice(0, 20),
+          returnDirection: String(cr.returnDirection).slice(0, 20),
+          cluster: ['indoor', 'outdoor', 'hidden'].includes(cr.cluster) ? cr.cluster : 'indoor',
+          objects: sanitizeRoomObjects(cr.objects || {}),
+        }
+      }
+    }
+
+    // Don't allow both createItem and createRoom in same response
+    if (stateChanges.createItem && stateChanges.createRoom) {
+      stateChanges.createRoom = null
+    }
+
     // Check for jailbreak success marker
     let jailbreakSuccess = false
     if (narrative.includes('<<DOOR_OPENS>>')) {
@@ -113,4 +135,21 @@ export default async function chatRoute(req, res) {
       stateChanges: {},
     })
   }
+}
+
+function sanitizeRoomObjects(objects) {
+  if (!objects || typeof objects !== 'object') return {}
+  const sanitized = {}
+  const entries = Object.entries(objects).slice(0, 3) // max 3 objects per room
+  for (const [key, obj] of entries) {
+    if (!obj || !obj.id || !obj.name || !obj.keywords || !obj.examineText) continue
+    const safeKey = String(key).replace(/[^a-z0-9_]/g, '').slice(0, 30)
+    sanitized[safeKey] = {
+      id: String(obj.id).replace(/[^a-z0-9_]/g, '').slice(0, 30),
+      name: String(obj.name).slice(0, 80),
+      keywords: (Array.isArray(obj.keywords) ? obj.keywords : []).slice(0, 5).map(k => String(k).slice(0, 30)),
+      examineText: String(obj.examineText).slice(0, 300),
+    }
+  }
+  return sanitized
 }

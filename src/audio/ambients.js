@@ -436,12 +436,19 @@ const roomConfigs = {
   },
 }
 
+// Fallback ambients for generated rooms based on cluster type
+const clusterFallbacks = {
+  indoor: roomConfigs.grand_hall,
+  outdoor: roomConfigs.grounds,
+  hidden: roomConfigs.vault,
+}
+
 class AmbientManager {
   currentRoom = null
   currentAmbient = null
   fadeTime = 1.0
 
-  setRoom(roomId) {
+  setRoom(roomId, cluster = null) {
     if (!audioEngine.initialized || roomId === this.currentRoom) return
     this.currentRoom = roomId
 
@@ -457,8 +464,11 @@ class AmbientManager {
       this.currentAmbient = null
     }
 
-    // Create and fade in new
-    const config = roomConfigs[roomId]
+    // Create and fade in new — fall back to cluster ambient for generated rooms
+    let config = roomConfigs[roomId]
+    if (!config && cluster) {
+      config = clusterFallbacks[cluster]
+    }
     if (config) {
       this.currentAmbient = config(audioEngine.masterGain)
       this.currentAmbient.fadeIn(this.fadeTime)

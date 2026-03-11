@@ -1,16 +1,17 @@
 import rooms from '../data/rooms'
 import itemDefs from '../data/items'
 import { ACTIONS } from './gameReducer'
+import { getRoom, getExits } from './roomLookup'
 
 export default function handleCommand(parsedCommand, gameState) {
-  const room = rooms[gameState.currentRoom]
+  const room = getRoom(gameState.currentRoom, gameState)
   if (!room) return { output: ['Error: unknown room.'], actions: [] }
 
   const takenItems = gameState.roomItemsTaken[gameState.currentRoom] || []
 
   switch (parsedCommand.type) {
     case 'look':
-      return handleLook(room, takenItems)
+      return handleLook(room, takenItems, gameState)
 
     case 'go':
       return handleGo(parsedCommand, room, gameState)
@@ -88,7 +89,7 @@ function handleHelp() {
   }
 }
 
-function handleLook(room, takenItems) {
+function handleLook(room, takenItems, gameState) {
   // Room header (for sticky display)
   const roomHeader = {
     name: room.name.toUpperCase(),
@@ -116,7 +117,7 @@ function handleLook(room, takenItems) {
   }
 
   // List exits
-  const exitDescriptions = formatExits(room)
+  const exitDescriptions = formatExits(room, gameState)
   if (exitDescriptions) {
     output.push('')
     output.push(exitDescriptions)
@@ -127,15 +128,16 @@ function handleLook(room, takenItems) {
 
 function handleGo(parsedCommand, room, gameState) {
   const { direction, raw } = parsedCommand
+  const mergedExits = getExits(gameState.currentRoom, gameState)
 
-  // Check standard cardinal exits
-  if (room.exits[direction]) {
-    const targetRoomId = room.exits[direction]
-    const targetRoom = rooms[targetRoomId]
+  // Check standard cardinal exits (includes dynamic exits)
+  if (mergedExits[direction]) {
+    const targetRoomId = mergedExits[direction]
+    const targetRoom = getRoom(targetRoomId, gameState)
     if (!targetRoom) return { output: ['That path leads nowhere.'], actions: [] }
 
     const takenItems = gameState.roomItemsTaken[targetRoomId] || []
-    const lookResult = handleLook(targetRoom, takenItems)
+    const lookResult = handleLook(targetRoom, takenItems, gameState)
 
     return {
       output: lookResult.output,
@@ -150,13 +152,13 @@ function handleGo(parsedCommand, room, gameState) {
     for (const [exitKey, aliases] of Object.entries(room.exitAliases)) {
       for (const alias of aliases) {
         if (inputToMatch.includes(alias)) {
-          const targetRoomId = room.exits[exitKey]
+          const targetRoomId = mergedExits[exitKey]
           if (!targetRoomId) continue
-          const targetRoom = rooms[targetRoomId]
+          const targetRoom = getRoom(targetRoomId, gameState)
           if (!targetRoom) continue
 
           const takenItems = gameState.roomItemsTaken[targetRoomId] || []
-          const lookResult = handleLook(targetRoom, takenItems)
+          const lookResult = handleLook(targetRoom, takenItems, gameState)
 
           return {
             output: lookResult.output,
@@ -779,21 +781,25 @@ function matchesKeyword(keywords, target) {
   return keywords.some(kw => t.includes(kw) || kw.includes(t))
 }
 
-function formatExits(room) {
+function formatExits(room, gameState) {
   const exitLabels = []
-  const directionNames = { north: 'North', south: 'South', east: 'East', west: 'West' }
+  const directionNames = {
+    north: 'North', south: 'South', east: 'East', west: 'West',
+    up: 'Up', down: 'Down',
+  }
+  const mergedExits = getExits(room.id, gameState)
 
-  for (const [dir, targetId] of Object.entries(room.exits)) {
-    const targetRoom = rooms[targetId]
+  for (const [dir, targetId] of Object.entries(mergedExits)) {
+    const targetRoom = getRoom(targetId, gameState)
     if (targetRoom && directionNames[dir]) {
-      exitLabels.push(`${directionNames[dir]}`)
+      exitLabels.push(directionNames[dir])
     }
   }
 
   // Add named exits from aliases
   if (room.exitAliases) {
     for (const exitKey of Object.keys(room.exitAliases)) {
-      const targetRoom = rooms[room.exits[exitKey]]
+      const targetRoom = getRoom(mergedExits[exitKey], gameState)
       if (targetRoom) {
         exitLabels.push(targetRoom.name)
       }

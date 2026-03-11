@@ -14,23 +14,51 @@ const OUTDOOR_ROOMS = {
   tree:     { col: 3, row: 1 },
 }
 
-export default function MiniMap({ currentRoom, visitedRooms, onClick }) {
+export default function MiniMap({ currentRoom, visitedRooms, onClick,
+                                   generatedRooms = {}, dynamicExits = {} }) {
   const isOutdoor = ['grounds', 'tree', 'entrance'].includes(currentRoom)
-  const roomSet = isOutdoor ? OUTDOOR_ROOMS : INDOOR_ROOMS
+  // If in a generated room, show the indoor grid with a special indicator
+  const isGenerated = currentRoom in generatedRooms
+  const roomSet = isOutdoor && !isGenerated ? OUTDOOR_ROOMS : INDOOR_ROOMS
+
+  // Find which seed rooms have dynamic branches
+  const seedsWithBranches = new Set()
+  for (const parentId of Object.keys(dynamicExits)) {
+    if (parentId in INDOOR_ROOMS) seedsWithBranches.add(parentId)
+  }
 
   return (
     <div className="mini-map" onClick={onClick} title="Map [M]">
       <div className="mini-map__label">MAP</div>
-      <div className={`mini-map__grid ${isOutdoor ? 'mini-map__grid--outdoor' : ''}`}>
+      <div className={`mini-map__grid ${isOutdoor && !isGenerated ? 'mini-map__grid--outdoor' : ''}`}>
         {Object.entries(roomSet).map(([roomId, pos]) => (
           <div
             key={roomId}
             className={`mini-map__room${
               currentRoom === roomId ? ' mini-map__room--current' : ''
-            }${visitedRooms.includes(roomId) ? ' mini-map__room--visited' : ''}`}
+            }${visitedRooms.includes(roomId) ? ' mini-map__room--visited' : ''}${
+              seedsWithBranches.has(roomId) ? ' mini-map__room--branched' : ''
+            }`}
             style={{ gridColumn: pos.col, gridRow: pos.row }}
           />
         ))}
+        {/* Show a blinking dot when player is in a generated room */}
+        {isGenerated && (() => {
+          // Walk up to find the seed room parent
+          let parentId = generatedRooms[currentRoom]?.parentRoom
+          while (parentId && generatedRooms[parentId]) {
+            parentId = generatedRooms[parentId].parentRoom
+          }
+          const parentPos = parentId && INDOOR_ROOMS[parentId]
+          if (!parentPos) return null
+          // Place indicator at row 4 (below grid) aligned with parent column
+          return (
+            <div
+              className="mini-map__room mini-map__room--current"
+              style={{ gridColumn: parentPos.col, gridRow: 4 }}
+            />
+          )
+        })()}
       </div>
     </div>
   )

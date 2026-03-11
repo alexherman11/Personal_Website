@@ -11,6 +11,9 @@ const initialState = {
   conversationHistory: [],
   aiLoading: false,
   jailbreakAttempts: 0,
+  generatedRooms: {},
+  dynamicExits: {},
+  generatedRoomCount: 0,
 }
 
 export default initialState
