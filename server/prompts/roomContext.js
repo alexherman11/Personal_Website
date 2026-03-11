@@ -41,5 +41,23 @@ export default function buildRoomContext(gameState) {
     parts.push(`GAME FLAGS: ${flagStr}`)
   }
 
+  // Room generation context
+  const genCount = gameState.generatedRoomCount || 0
+  parts.push(`GENERATED ROOMS THIS SESSION: ${genCount}/8`)
+
+  const currentDepth = gameState.currentRoomDepth
+  if (currentDepth !== undefined) {
+    parts.push(`CURRENT ROOM DEPTH FROM SEED: ${currentDepth}/3`)
+  }
+
+  const dynamicExits = gameState.dynamicExits || {}
+  const dynExitEntries = Object.entries(dynamicExits)
+    .map(([room, exits]) =>
+      `${room}: ${Object.entries(exits).map(([dir, target]) => `${dir}→${target}`).join(', ')}`
+    )
+  if (dynExitEntries.length > 0) {
+    parts.push(`DYNAMIC EXITS: ${dynExitEntries.join('; ')}`)
+  }
+
   return parts.join('\n')
 }

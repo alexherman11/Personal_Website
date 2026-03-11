@@ -10,21 +10,56 @@ const ROOM_LABELS = {
   tree: 'Tree',
 }
 
-function roomChar(roomId, visitedRooms, currentRoom) {
-  if (currentRoom === roomId) return '\u2588'  // solid block, will blink via CSS
+function roomChar(roomId, visitedRooms, currentRoom, generatedRooms) {
+  if (currentRoom === roomId) return '\u2588'
   if (visitedRooms.includes(roomId)) return '\u2588'
   return '?'
 }
 
-function roomClass(roomId, currentRoom) {
-  if (currentRoom === roomId) return 'map-room map-room--current'
-  return 'map-room'
+function roomLabel(roomId, visitedRooms, generatedRooms) {
+  if (!visitedRooms.includes(roomId)) return '???'
+  if (ROOM_LABELS[roomId]) return ROOM_LABELS[roomId]
+  if (generatedRooms[roomId]) return generatedRooms[roomId].name
+  return '???'
 }
 
-export default function MapPanel({ isOpen, visitedRooms, currentRoom, onClose }) {
-  const r = (id) => roomChar(id, visitedRooms, currentRoom)
-  const c = (id) => roomClass(id, currentRoom)
-  const label = (id) => visitedRooms.includes(id) ? ROOM_LABELS[id] : '???'
+function buildBranches(dynamicExits, generatedRooms, visitedRooms, currentRoom) {
+  if (!dynamicExits) return []
+  const branches = []
+
+  for (const [parentId, exits] of Object.entries(dynamicExits)) {
+    for (const [, childId] of Object.entries(exits)) {
+      const parentName = ROOM_LABELS[parentId]
+        || (generatedRooms[parentId] && visitedRooms.includes(parentId) ? generatedRooms[parentId].name : null)
+        || '???'
+      const childChar = roomChar(childId, visitedRooms, currentRoom, generatedRooms)
+      const childName = roomLabel(childId, visitedRooms, generatedRooms)
+
+      // Check if this child has its own children (for chaining)
+      let chain = ` ${parentName} \u2500\u25B8 [${childChar}] ${childName}`
+      let cursor = childId
+      while (dynamicExits[cursor]) {
+        const nextExits = Object.entries(dynamicExits[cursor])
+        if (nextExits.length === 0) break
+        const [, nextChildId] = nextExits[0]
+        const nextChar = roomChar(nextChildId, visitedRooms, currentRoom, generatedRooms)
+        const nextName = roomLabel(nextChildId, visitedRooms, generatedRooms)
+        chain += ` \u2500\u25B8 [${nextChar}] ${nextName}`
+        cursor = nextChildId
+      }
+      branches.push(chain)
+    }
+  }
+
+  return branches
+}
+
+export default function MapPanel({ isOpen, visitedRooms, currentRoom, onClose,
+                                    generatedRooms = {}, dynamicExits = {} }) {
+  const r = (id) => roomChar(id, visitedRooms, currentRoom, generatedRooms)
+  const label = (id) => roomLabel(id, visitedRooms, generatedRooms)
+
+  const branches = buildBranches(dynamicExits, generatedRooms, visitedRooms, currentRoom)
 
   return (
     <div className={`map-panel ${isOpen ? 'map-panel--open' : ''}`}>
@@ -54,7 +89,10 @@ export default function MapPanel({ isOpen, visitedRooms, currentRoom, onClose })
 
  [${r('grounds')}]--[${r('tree')}]
  ${label('grounds')}  ${label('tree')}
-`}
+${branches.length > 0 ? `
+
+  --- Discovered ---
+${branches.join('\n')}` : ''}`}
         </pre>
 
         <div className="map-panel__legend">

@@ -1,3 +1,5 @@
+import rooms from '../data/rooms'
+
 export const ACTIONS = {
   MOVE_TO_ROOM: 'MOVE_TO_ROOM',
   ADD_ITEM: 'ADD_ITEM',
@@ -13,6 +15,7 @@ export const ACTIONS = {
   ADD_CONVERSATION_MESSAGE: 'ADD_CONVERSATION_MESSAGE',
   SET_AI_LOADING: 'SET_AI_LOADING',
   INCREMENT_JAILBREAK_ATTEMPTS: 'INCREMENT_JAILBREAK_ATTEMPTS',
+  CREATE_ROOM: 'CREATE_ROOM',
 }
 
 export default function gameReducer(state, action) {
@@ -101,6 +104,46 @@ export default function gameReducer(state, action) {
 
     case ACTIONS.INCREMENT_JAILBREAK_ATTEMPTS:
       return { ...state, jailbreakAttempts: state.jailbreakAttempts + 1 }
+
+    case ACTIONS.CREATE_ROOM: {
+      const { room, parentRoomId, exitDirection } = action.payload
+
+      // Guard: session cap
+      if (state.generatedRoomCount >= 8) return state
+
+      // Guard: duplicate room ID (check static and generated)
+      if (rooms[room.id] || state.generatedRooms[room.id]) return state
+
+      // Guard: exit direction already occupied on parent
+      const parentStaticExits = rooms[parentRoomId]?.exits || state.generatedRooms[parentRoomId]?.exits || {}
+      const parentDynamicExits = state.dynamicExits[parentRoomId] || {}
+      if (parentStaticExits[exitDirection] || parentDynamicExits[exitDirection]) return state
+
+      // Guard: depth cap (walk parentRoom chain, max 3 deep)
+      let depth = 0
+      let cursor = parentRoomId
+      while (state.generatedRooms[cursor]) {
+        depth++
+        cursor = state.generatedRooms[cursor].parentRoom
+        if (depth >= 3) return state
+      }
+
+      return {
+        ...state,
+        generatedRooms: {
+          ...state.generatedRooms,
+          [room.id]: room,
+        },
+        dynamicExits: {
+          ...state.dynamicExits,
+          [parentRoomId]: {
+            ...parentDynamicExits,
+            [exitDirection]: room.id,
+          },
+        },
+        generatedRoomCount: state.generatedRoomCount + 1,
+      }
+    }
 
     default:
       return state

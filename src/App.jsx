@@ -18,6 +18,7 @@ import rooms from './data/rooms'
 import itemDefs from './data/items'
 import * as effects from './audio/effects'
 import ambientManager from './audio/ambients'
+import { getRoom, getGenerationDepth } from './engine/roomLookup'
 
 export default function App() {
   const [state, dispatch] = useReducer(gameReducer, initialState)
@@ -50,7 +51,10 @@ export default function App() {
 
   // Audio: room ambient changes (gate on audioReady so initial room starts after init)
   useEffect(() => {
-    if (audioReady) ambientManager.setRoom(state.currentRoom)
+    if (audioReady) {
+      const room = getRoom(state.currentRoom, state)
+      ambientManager.setRoom(state.currentRoom, room?.cluster)
+    }
   }, [state.currentRoom, audioReady])
 
   // Audio: panel open/close
@@ -134,7 +138,7 @@ export default function App() {
 
       try {
         // Build available static items for AI room awareness
-        const currentRoom = rooms[state.currentRoom]
+        const currentRoom = getRoom(state.currentRoom, state)
         const takenHere = state.roomItemsTaken[state.currentRoom] || []
         const currentRoomItems = currentRoom
           ? Object.values(currentRoom.items)
@@ -160,6 +164,10 @@ export default function App() {
               conversationHistory: state.conversationHistory,
               jailbreakAttempts: state.jailbreakAttempts,
               currentRoomItems,
+              generatedRoomCount: state.generatedRoomCount,
+              dynamicExits: state.dynamicExits,
+              currentRoomDepth: getGenerationDepth(state.currentRoom, state),
+              parentRoom: getRoom(state.currentRoom, state)?.parentRoom || null,
             },
           }),
         })
@@ -194,6 +202,35 @@ export default function App() {
         if (data.stateChanges?.createItem) {
           dispatch({ type: ACTIONS.ADD_ITEM, payload: data.stateChanges.createItem })
           effects.itemPickup()
+        }
+
+        // Handle AI-created rooms
+        if (data.stateChanges?.createRoom) {
+          const cr = data.stateChanges.createRoom
+          const roomDef = {
+            id: cr.id,
+            name: cr.name,
+            description: cr.description,
+            asciiArt: [],
+            exits: { [cr.returnDirection]: state.currentRoom },
+            exitAliases: { [cr.returnDirection]: ['back', 'go back', 'return', 'leave'] },
+            objects: cr.objects || {},
+            items: {},
+            hiddenInteractions: {},
+            cluster: cr.cluster || 'indoor',
+            parentRoom: state.currentRoom,
+            generatedAt: Date.now(),
+          }
+          dispatch({
+            type: ACTIONS.CREATE_ROOM,
+            payload: {
+              room: roomDef,
+              parentRoomId: state.currentRoom,
+              exitDirection: cr.exitDirection,
+              returnDirection: cr.returnDirection,
+            },
+          })
+          effects.roomTransition()
         }
 
         dispatch({
@@ -246,12 +283,16 @@ export default function App() {
               currentRoom={state.currentRoom}
               visitedRooms={state.visitedRooms}
               onClick={() => dispatch({ type: ACTIONS.TOGGLE_PANEL, payload: 'map' })}
+              generatedRooms={state.generatedRooms}
+              dynamicExits={state.dynamicExits}
             />
             <MapPanel
               isOpen={state.panelOpen === 'map'}
               visitedRooms={state.visitedRooms}
               currentRoom={state.currentRoom}
               onClose={() => dispatch({ type: ACTIONS.CLOSE_PANELS })}
+              generatedRooms={state.generatedRooms}
+              dynamicExits={state.dynamicExits}
             />
           </div>
           {state.logbookOpen && (
