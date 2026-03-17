@@ -109,7 +109,7 @@ function handleLook(room, takenItems, gameState) {
   if (availableItems.length > 0) {
     output.push('')
     for (const item of availableItems) {
-      const def = itemDefs[item.id]
+      const def = itemDefs[item.id] || gameState.generatedItemDefs?.[item.id]
       if (def) {
         output.push(`You notice a ${def.name.toLowerCase()} here.`)
       }
@@ -170,7 +170,13 @@ function handleGo(parsedCommand, room, gameState) {
     }
   }
 
-  return { output: ['You can\'t go that way.'], actions: [] }
+  // Route unrecognized movement to AI — lets the narrator handle it in-character
+  // (e.g., "explore the passageway", "go through the door", "enter the tunnel")
+  return {
+    output: [],
+    actions: [],
+    aiRequest: { message: `[The visitor tries to move: "${raw || direction}"]` },
+  }
 }
 
 function handleExamine(parsedCommand, room, takenItems, gameState) {
@@ -222,10 +228,10 @@ function handleExamine(parsedCommand, room, takenItems, gameState) {
     }
   }
 
-  // Also search items not yet taken
+  // Also search items not yet taken (static + generated)
   for (const item of Object.values(room.items)) {
     if (!takenItems.includes(item.id) && matchesKeyword(item.keywords, target)) {
-      const def = itemDefs[item.id]
+      const def = itemDefs[item.id] || gameState.generatedItemDefs?.[item.id]
       if (def) {
         matches.push({
           id: item.id,
@@ -281,14 +287,14 @@ function handleExamine(parsedCommand, room, takenItems, gameState) {
 function handleTake(parsedCommand, room, takenItems, gameState) {
   const target = parsedCommand.target
 
-  // Check static room items
+  // Check room items (static + generated)
   for (const item of Object.values(room.items)) {
     if (matchesKeyword(item.keywords, target)) {
       if (takenItems.includes(item.id)) {
         return { output: ['You\'ve already taken that.'], actions: [] }
       }
 
-      const def = itemDefs[item.id]
+      const def = itemDefs[item.id] || gameState.generatedItemDefs?.[item.id]
       if (!def) {
         return { output: ['You can\'t take that.'], actions: [] }
       }

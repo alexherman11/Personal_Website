@@ -272,8 +272,8 @@ This project is not to make me money. If I ever made enough money to live off ba
 ## Misc / Fun Facts
 
 - Lifeguarded at Santa Cruz beaches for 4 years
-- Was a Junior Guard for 9 years before that
 - Likes plants
 - Built 4 tree nets, including one 50 feet in the air
 - Interested in AI ethics and language model applications, education, community building.
 - From Santa Cruz, CA - studies at Cal Poly SLO
+- I am a skilled charcoal artist

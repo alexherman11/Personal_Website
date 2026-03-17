@@ -3,12 +3,22 @@ import useCommandHistory from '../../hooks/useCommandHistory'
 import { keystroke as playKeystroke } from '../../audio/effects'
 import './Terminal.css'
 
+function generateStaticLine(width = 55) {
+  const chars = ' ░▒▓█'
+  return Array.from({ length: width }, () =>
+    chars[Math.floor(Math.random() * chars.length)]
+  ).join('')
+}
+
 const Terminal = forwardRef(function Terminal({ onCommand, disabled: externalDisabled }, ref) {
   const [lines, setLines] = useState([])
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [currentlyTypingText, setCurrentlyTypingText] = useState(null)
   const [roomHeader, setRoomHeader] = useState(null)
+  const [transitionActive, setTransitionActive] = useState(false)
+  const [staticLines, setStaticLines] = useState([])
+  const [dissolvingLines, setDissolvingLines] = useState(new Set())
 
   const outputRef = useRef(null)
   const inputRef = useRef(null)
@@ -17,6 +27,8 @@ const Terminal = forwardRef(function Terminal({ onCommand, disabled: externalDis
   const timerRef = useRef(null)
   const isProcessingRef = useRef(false)
   const currentItemRef = useRef(null)
+  const transitionResolveRef = useRef(null)
+  const transitionTimersRef = useRef([])
 
   const { push: pushHistory, navigateUp, navigateDown } = useCommandHistory()
 
@@ -154,6 +166,46 @@ const Terminal = forwardRef(function Terminal({ onCommand, disabled: externalDis
     clearLines() {
       clearLines()
     },
+    playTransition({ duration = 1000 } = {}) {
+      return new Promise(resolve => {
+        transitionResolveRef.current = resolve
+        clearLines()
+        setRoomHeader(null)
+        setTransitionActive(true)
+
+        const numLines = 14
+        setStaticLines(Array.from({ length: numLines }, () => generateStaticLine()))
+        setDissolvingLines(new Set())
+
+        // Animate static refresh
+        const refreshId = setInterval(() => {
+          setStaticLines(prev => prev.map(() => generateStaticLine()))
+        }, 100)
+        transitionTimersRef.current.push(refreshId)
+
+        // After duration, dissolve lines top-to-bottom
+        const dissolveId = setTimeout(() => {
+          clearInterval(refreshId)
+          let i = 0
+          const stepId = setInterval(() => {
+            if (i >= numLines) {
+              clearInterval(stepId)
+              setTransitionActive(false)
+              setStaticLines([])
+              setDissolvingLines(new Set())
+              transitionTimersRef.current = []
+              transitionResolveRef.current = null
+              resolve()
+              return
+            }
+            setDissolvingLines(prev => new Set([...prev, i]))
+            i++
+          }, 40)
+          transitionTimersRef.current.push(stepId)
+        }, duration)
+        transitionTimersRef.current.push(dissolveId)
+      })
+    },
   }), [processQueue, commitLine, clearLines])
 
   const focusInput = () => {
@@ -178,21 +230,51 @@ const Terminal = forwardRef(function Terminal({ onCommand, disabled: externalDis
     }
   }
 
-  // Skip typing on any keypress (when not focused on input)
+  // Skip typing or transition on any keypress
   useEffect(() => {
     const handleGlobalKey = (e) => {
       if (e.defaultPrevented) return
-      if (isTyping && e.key !== 'F5' && e.key !== 'F12' && !e.ctrlKey && !e.metaKey) {
+      if (e.key === 'F5' || e.key === 'F12' || e.ctrlKey || e.metaKey) return
+
+      // Skip transition animation
+      if (transitionActive && transitionResolveRef.current) {
+        for (const id of transitionTimersRef.current) {
+          clearTimeout(id)
+          clearInterval(id)
+        }
+        transitionTimersRef.current = []
+        setTransitionActive(false)
+        setStaticLines([])
+        setDissolvingLines(new Set())
+        const resolve = transitionResolveRef.current
+        transitionResolveRef.current = null
+        resolve()
+        return
+      }
+
+      if (isTyping) {
         skipAll()
       }
     }
     window.addEventListener('keydown', handleGlobalKey)
     return () => window.removeEventListener('keydown', handleGlobalKey)
-  }, [isTyping, skipAll])
+  }, [isTyping, transitionActive, skipAll])
 
   return (
     <div className="terminal" onClick={focusInput}>
-      {roomHeader && (
+      {transitionActive && (
+        <div className="terminal-transition">
+          {staticLines.map((line, i) => (
+            <div
+              key={i}
+              className={`terminal-static-line${dissolvingLines.has(i) ? ' terminal-static-line--dissolving' : ''}`}
+            >
+              {line}
+            </div>
+          ))}
+        </div>
+      )}
+      {!transitionActive && roomHeader && (
         <div className="terminal-room-header">
           <div className="terminal-line terminal-line--room-name">
             {roomHeader.name}
@@ -206,37 +288,41 @@ const Terminal = forwardRef(function Terminal({ onCommand, disabled: externalDis
           </div>
         </div>
       )}
-      <div className="terminal-output" ref={outputRef}>
-        {lines.map(line => (
-          <div
-            key={line.id}
-            className={`terminal-line terminal-line--${line.type}${line.dim ? ' terminal-line--dim' : ''}`}
-          >
-            {line.type === 'input' && <span className="terminal-prompt">&gt; </span>}
-            {line.content}
-          </div>
-        ))}
-        {currentlyTypingText !== null && (
-          <div className="terminal-line terminal-line--output">
-            {currentlyTypingText}
-            <span className="terminal-cursor">_</span>
-          </div>
-        )}
-      </div>
-      <div className="terminal-input-line">
-        <span className="terminal-prompt">&gt;&nbsp;</span>
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={isTyping || externalDisabled}
-          autoFocus
-          spellCheck={false}
-          autoComplete="off"
-        />
-      </div>
+      {!transitionActive && (
+        <div className="terminal-output" ref={outputRef}>
+          {lines.map(line => (
+            <div
+              key={line.id}
+              className={`terminal-line terminal-line--${line.type}${line.dim ? ' terminal-line--dim' : ''}`}
+            >
+              {line.type === 'input' && <span className="terminal-prompt">&gt; </span>}
+              {line.content}
+            </div>
+          ))}
+          {currentlyTypingText !== null && (
+            <div className="terminal-line terminal-line--output">
+              {currentlyTypingText}
+              <span className="terminal-cursor">_</span>
+            </div>
+          )}
+        </div>
+      )}
+      {!transitionActive && (
+        <div className="terminal-input-line">
+          <span className="terminal-prompt">&gt;&nbsp;</span>
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isTyping || externalDisabled || transitionActive}
+            autoFocus
+            spellCheck={false}
+            autoComplete="off"
+          />
+        </div>
+      )}
     </div>
   )
 })

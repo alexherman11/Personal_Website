@@ -168,6 +168,20 @@ export function resetBootTick() {
   bootTickCount = 0
 }
 
+export function menuSelect() {
+  if (!audioEngine.initialized) return
+  const synth = new Tone.Synth({
+    oscillator: { type: 'sine' },
+    envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.05 },
+  })
+  const gain = new Tone.Gain(0.08)
+  synth.connect(gain)
+  gain.connect(audioEngine.masterGain)
+
+  synth.triggerAttackRelease('A4', '32n')
+  setTimeout(() => { synth.dispose(); gain.dispose() }, 400)
+}
+
 export function jailbreakSuccess() {
   if (!audioEngine.initialized) return
   const synth = new Tone.PolySynth(Tone.Synth, {

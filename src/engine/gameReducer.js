@@ -16,6 +16,7 @@ export const ACTIONS = {
   SET_AI_LOADING: 'SET_AI_LOADING',
   INCREMENT_JAILBREAK_ATTEMPTS: 'INCREMENT_JAILBREAK_ATTEMPTS',
   CREATE_ROOM: 'CREATE_ROOM',
+  ADD_GENERATED_ITEM_DEFS: 'ADD_GENERATED_ITEM_DEFS',
 }
 
 export default function gameReducer(state, action) {
@@ -142,6 +143,16 @@ export default function gameReducer(state, action) {
           },
         },
         generatedRoomCount: state.generatedRoomCount + 1,
+      }
+    }
+
+    case ACTIONS.ADD_GENERATED_ITEM_DEFS: {
+      return {
+        ...state,
+        generatedItemDefs: {
+          ...state.generatedItemDefs,
+          ...action.payload,
+        },
       }
     }
 

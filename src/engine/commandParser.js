@@ -8,8 +8,11 @@ const DIRECTION_ALIASES = {
 }
 
 export default function parseCommand(raw) {
-  const input = raw.trim().toLowerCase()
+  let input = raw.trim().toLowerCase()
   if (!input) return null
+
+  // Strip leading "I" so natural phrasing works: "I go north", "I examine desk"
+  input = input.replace(/^i\s+/, '')
 
   // Single-word exact matches
   if (input === 'look' || input === 'l') return { type: 'look' }
@@ -22,6 +25,8 @@ export default function parseCommand(raw) {
   if (input === 'taste') return { type: 'taste' }
   if (input === 'touch') return { type: 'touch' }
   if (input === 'read runes') return { type: 'read_runes' }
+  if (input === 'newgame' || input === 'new game' || input === 'restart') return { type: 'newgame' }
+  if (input === 'menu' || input === 'main menu' || input === 'home') return { type: 'menu' }
 
   // Easter eggs — classic text adventure commands
   if (input === 'xyzzy') return { type: 'easter_egg', egg: 'xyzzy' }
@@ -69,12 +74,17 @@ export default function parseCommand(raw) {
   const combineMatch = input.match(/^combine\s+(.+?)\s*\+\s*(.+)/)
   if (combineMatch) return { type: 'combine', item1: combineMatch[1].trim(), item2: combineMatch[2].trim() }
 
-  // Navigation phrases for outdoor areas (don't start with "go")
+  // Navigation phrases (don't start with "go")
   const navPhrases = [
     'climb down', 'climb up', 'climb tree', 'climb ladder',
     'approach tree', 'approach oak', 'walk toward tree',
     'go to tree', 'go to door', 'go back',
     'look around', 'go around', 'explore',
+    'enter', 'descend', 'ascend', 'crawl',
+    'go through', 'go into', 'go inside', 'go down', 'go up',
+    'walk through', 'walk into', 'walk inside', 'walk down', 'walk up',
+    'step through', 'step into', 'step inside',
+    'follow', 'proceed',
   ]
   for (const phrase of navPhrases) {
     if (input === phrase || input.startsWith(phrase)) {

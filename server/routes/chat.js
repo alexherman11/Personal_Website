@@ -1,5 +1,6 @@
 import { getClient } from '../auth/claudeAuth.js'
 import assembleSystemPrompt from '../prompts/assemblePrompt.js'
+import { generateAsciiArt } from '../ascii/generateAscii.js'
 
 export default async function chatRoute(req, res) {
   const { message, gameState } = req.body
@@ -26,7 +27,7 @@ export default async function chatRoute(req, res) {
     const client = await getClient()
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 600,
+      max_tokens: 1024,
       system: systemPrompt,
       messages,
     })
@@ -86,6 +87,8 @@ export default async function chatRoute(req, res) {
       if (!cr.id || !cr.name || !cr.description || !cr.exitDirection || !cr.returnDirection) {
         stateChanges.createRoom = null
       } else {
+        const asciiPrompt = cr.asciiPrompt ? String(cr.asciiPrompt).slice(0, 200) : null
+        const { roomItems, itemDefs } = sanitizeRoomItems(cr.items || {})
         stateChanges.createRoom = {
           id: String(cr.id).replace(/[^a-z0-9_]/g, '').slice(0, 40),
           name: String(cr.name).slice(0, 60),
@@ -96,6 +99,11 @@ export default async function chatRoute(req, res) {
           returnDirection: String(cr.returnDirection).slice(0, 20),
           cluster: ['indoor', 'outdoor', 'hidden'].includes(cr.cluster) ? cr.cluster : 'indoor',
           objects: sanitizeRoomObjects(cr.objects || {}),
+          roomItems,
+          itemDefs,
+          hiddenInteractions: sanitizeHiddenInteractions(cr.hiddenInteractions || {}),
+          movePlayer: !!cr.movePlayer,
+          asciiArt: asciiPrompt ? await generateAsciiArt(asciiPrompt) : [],
         }
       }
     }
@@ -135,6 +143,66 @@ export default async function chatRoute(req, res) {
       stateChanges: {},
     })
   }
+}
+
+function sanitizeRoomItems(items) {
+  const roomItems = {}
+  const itemDefs = {}
+  if (!items || typeof items !== 'object') return { roomItems, itemDefs }
+
+  // Max 1 item per generated room
+  const entries = Object.entries(items).slice(0, 1)
+  for (const [key, item] of entries) {
+    if (!item || !item.id || !item.name || !item.icon || !item.keywords || !item.takeText || !item.description) continue
+    const safeId = String(item.id).replace(/[^a-z0-9_]/g, '').slice(0, 30)
+    const safeKey = String(key).replace(/[^a-z0-9_]/g, '').slice(0, 30)
+
+    // Room slot — what handleTake uses to match and respond
+    roomItems[safeKey] = {
+      id: safeId,
+      keywords: (Array.isArray(item.keywords) ? item.keywords : []).slice(0, 5).map(k => String(k).slice(0, 30)),
+      takeText: String(item.takeText).slice(0, 300),
+    }
+
+    // Inventory definition — what goes into the player's inventory
+    itemDefs[safeId] = {
+      id: safeId,
+      name: String(item.name).slice(0, 60),
+      icon: String(item.icon).slice(0, 4),
+      description: String(item.description).slice(0, 300),
+      realLink: null,
+      isVaultClue: false,
+    }
+  }
+  return { roomItems, itemDefs }
+}
+
+function sanitizeHiddenInteractions(interactions) {
+  if (!interactions || typeof interactions !== 'object') return {}
+  const sanitized = {}
+
+  // Max 1 hidden interaction per generated room
+  const entries = Object.entries(interactions).slice(0, 1)
+  for (const [key, interaction] of entries) {
+    if (!interaction || !interaction.keywords || !interaction.responseText) continue
+    const safeKey = String(key).replace(/[^a-z0-9_]/g, '').slice(0, 30)
+
+    const entry = {
+      keywords: (Array.isArray(interaction.keywords) ? interaction.keywords : []).slice(0, 5).map(k => String(k).slice(0, 40)),
+      responseText: String(interaction.responseText).slice(0, 300),
+    }
+
+    // Optional flag
+    if (interaction.flag && interaction.flag.key) {
+      entry.flag = {
+        key: String(interaction.flag.key).replace(/[^a-z0-9_]/g, '').slice(0, 40),
+        value: Boolean(interaction.flag.value),
+      }
+    }
+
+    sanitized[safeKey] = entry
+  }
+  return sanitized
 }
 
 function sanitizeRoomObjects(objects) {

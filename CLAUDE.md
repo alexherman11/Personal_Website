@@ -7,5 +7,5 @@ Logbook text should preserve Alex's voice — edit for pagination only, not tone
 The narrator never breaks character or acknowledges being an AI (until the vault)
 The entrance jailbreak should be fun, not frustrating — hints escalate after 6-10 attempts
 ASCII art should be hand-crafted to fit ~60-80 char width terminals
-No localStorage — all state in React state (resets on refresh is fine)
+localStorage used for save state only (game progress persists across tab closes; type "newgame" to reset)
 Audio must have a mute toggle and should not autoplay until first user interaction
