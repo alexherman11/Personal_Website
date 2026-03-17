@@ -1,5 +1,7 @@
 import { useReducer, useRef, useCallback, useEffect } from 'react'
 import CRTScreen from './components/CRTScreen/CRTScreen'
+import LandingPage from './components/LandingPage/LandingPage'
+import PortfolioPage from './components/PortfolioPage/PortfolioPage'
 import BootSequence from './components/BootSequence/BootSequence'
 import Terminal from './components/Terminal/Terminal'
 import InventoryPanel from './components/InventoryPanel/InventoryPanel'
@@ -9,6 +11,7 @@ import MiniInventory from './components/MiniInventory/MiniInventory'
 import Logbook from './components/Logbook/Logbook'
 import gameReducer, { ACTIONS } from './engine/gameReducer'
 import initialState from './engine/initialState'
+import { saveGame, loadGame, clearSave } from './engine/saveState'
 import parseCommand from './engine/commandParser'
 import handleGameCommand from './engine/commandHandler'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
@@ -18,10 +21,11 @@ import rooms from './data/rooms'
 import itemDefs from './data/items'
 import * as effects from './audio/effects'
 import ambientManager from './audio/ambients'
+import musicManager from './audio/music'
 import { getRoom, getGenerationDepth } from './engine/roomLookup'
 
 export default function App() {
-  const [state, dispatch] = useReducer(gameReducer, initialState)
+  const [state, dispatch] = useReducer(gameReducer, initialState, () => loadGame() || initialState)
   const terminalRef = useRef(null)
   const hasShownInitialRoom = useRef(false)
   const { muted, toggleMute, initialized: audioReady } = useAudio()
@@ -30,6 +34,13 @@ export default function App() {
   const prevPanelRef = useRef(null)
   const prevLogbookRef = useRef(null)
   const prevPageRef = useRef(0)
+
+  // Persist game state to localStorage on meaningful changes
+  useEffect(() => {
+    saveGame(state)
+  }, [state.phase, state.currentRoom, state.visitedRooms, state.inventory,
+      state.roomItemsTaken, state.flags, state.generatedRooms,
+      state.dynamicExits, state.generatedRoomCount, state.generatedItemDefs])
 
   const handleBootComplete = useCallback(() => {
     dispatch({ type: ACTIONS.SET_PHASE, payload: 'playing' })
@@ -54,6 +65,7 @@ export default function App() {
     if (audioReady) {
       const room = getRoom(state.currentRoom, state)
       ambientManager.setRoom(state.currentRoom, room?.cluster)
+      musicManager.setRoom(state.currentRoom, room?.cluster)
     }
   }, [state.currentRoom, audioReady])
 
@@ -89,27 +101,45 @@ export default function App() {
     const parsed = parseCommand(rawInput)
     if (!parsed) return
 
+    if (parsed.type === 'newgame') {
+      clearSave()
+      window.location.reload()
+      return
+    }
+
+    if (parsed.type === 'menu') {
+      dispatch({ type: ACTIONS.SET_PHASE, payload: 'landing' })
+      return
+    }
+
     const result = handleGameCommand(parsed, state)
 
-    // Dispatch local state changes with audio triggers
-    for (const action of result.actions) {
-      dispatch(action)
-      if (action.type === ACTIONS.MOVE_TO_ROOM) effects.roomTransition()
-      if (action.type === ACTIONS.ADD_ITEM) effects.itemPickup()
-    }
-
-    // Handle room header: clear terminal on room move, update header always
-    const hasRoomMove = result.actions.some(a => a.type === ACTIONS.MOVE_TO_ROOM)
-    if (result.roomHeader && terminalRef.current) {
-      if (hasRoomMove) {
-        terminalRef.current.clearLines()
+    // Check for room move — play transition animation before dispatching
+    const roomMoveAction = result.actions.find(a => a.type === ACTIONS.MOVE_TO_ROOM)
+    if (roomMoveAction && terminalRef.current) {
+      effects.roomTransition()
+      await terminalRef.current.playTransition({ duration: 800 })
+      // Dispatch all actions after transition completes
+      for (const action of result.actions) {
+        dispatch(action)
+        if (action.type === ACTIONS.ADD_ITEM) effects.itemPickup()
       }
-      terminalRef.current.setRoomHeader(result.roomHeader)
-    }
-
-    // Render local output to terminal
-    if (result.output.length > 0 && terminalRef.current) {
-      terminalRef.current.addLines(result.output, { typewriter: true, speed: 20 })
+      if (result.roomHeader) terminalRef.current.setRoomHeader(result.roomHeader)
+      if (result.output.length > 0) {
+        terminalRef.current.addLines(result.output, { typewriter: true, speed: 20 })
+      }
+    } else {
+      // No room move — dispatch immediately
+      for (const action of result.actions) {
+        dispatch(action)
+        if (action.type === ACTIONS.ADD_ITEM) effects.itemPickup()
+      }
+      if (result.roomHeader && terminalRef.current) {
+        terminalRef.current.setRoomHeader(result.roomHeader)
+      }
+      if (result.output.length > 0 && terminalRef.current) {
+        terminalRef.current.addLines(result.output, { typewriter: true, speed: 20 })
+      }
     }
 
     // Handle local door opening (Explorer key, Knock, Hacker, Brute)
@@ -137,17 +167,34 @@ export default function App() {
       }
 
       try {
-        // Build available static items for AI room awareness
+        // Build available items for AI room awareness (static + generated)
         const currentRoom = getRoom(state.currentRoom, state)
         const takenHere = state.roomItemsTaken[state.currentRoom] || []
         const currentRoomItems = currentRoom
           ? Object.values(currentRoom.items)
               .filter(item => !takenHere.includes(item.id))
               .map(item => {
-                const def = itemDefs[item.id]
+                const def = itemDefs[item.id] || state.generatedItemDefs[item.id]
                 return def ? { id: item.id, name: def.name, keywords: item.keywords } : null
               })
               .filter(Boolean)
+          : []
+
+        // Build room exits (static + dynamic) and object list for AI awareness
+        const staticExits = currentRoom?.exits || {}
+        const dynExits = state.dynamicExits[state.currentRoom] || {}
+        const allExits = { ...staticExits, ...dynExits }
+        const roomObjects = currentRoom
+          ? Object.values(currentRoom.objects).map(obj => obj.name)
+          : []
+
+        // Build hidden interaction keywords for AI awareness (just keywords, not responses)
+        const currentRoomHiddenKeywords = currentRoom?.hiddenInteractions
+          ? Object.entries(currentRoom.hiddenInteractions).map(([key, hi]) => ({
+              key,
+              keywords: hi.keywords || [],
+              triggered: hi.flag ? !!state.flags[hi.flag.key] : false,
+            }))
           : []
 
         const response = await fetch('/api/chat', {
@@ -157,6 +204,9 @@ export default function App() {
             message: result.aiRequest.message,
             gameState: {
               currentRoom: state.currentRoom,
+              currentRoomName: currentRoom?.name || state.currentRoom,
+              currentRoomExits: allExits,
+              currentRoomObjects: roomObjects,
               visitedRooms: state.visitedRooms,
               inventory: state.inventory.map(i => ({ id: i.id, name: i.name })),
               flags: state.flags,
@@ -164,6 +214,7 @@ export default function App() {
               conversationHistory: state.conversationHistory,
               jailbreakAttempts: state.jailbreakAttempts,
               currentRoomItems,
+              currentRoomHiddenKeywords,
               generatedRoomCount: state.generatedRoomCount,
               dynamicExits: state.dynamicExits,
               currentRoomDepth: getGenerationDepth(state.currentRoom, state),
@@ -211,12 +262,12 @@ export default function App() {
             id: cr.id,
             name: cr.name,
             description: cr.description,
-            asciiArt: [],
+            asciiArt: cr.asciiArt || [],
             exits: { [cr.returnDirection]: state.currentRoom },
             exitAliases: { [cr.returnDirection]: ['back', 'go back', 'return', 'leave'] },
             objects: cr.objects || {},
-            items: {},
-            hiddenInteractions: {},
+            items: cr.roomItems || {},
+            hiddenInteractions: cr.hiddenInteractions || {},
             cluster: cr.cluster || 'indoor',
             parentRoom: state.currentRoom,
             generatedAt: Date.now(),
@@ -230,7 +281,23 @@ export default function App() {
               returnDirection: cr.returnDirection,
             },
           })
-          effects.roomTransition()
+          // Store generated item definitions for handleTake lookups
+          if (cr.itemDefs && Object.keys(cr.itemDefs).length > 0) {
+            dispatch({ type: ACTIONS.ADD_GENERATED_ITEM_DEFS, payload: cr.itemDefs })
+          }
+          // Auto-move player into created room when AI signals movePlayer
+          if (cr.movePlayer && terminalRef.current) {
+            effects.roomTransition()
+            await terminalRef.current.playTransition({ duration: 800 })
+            dispatch({ type: ACTIONS.MOVE_TO_ROOM, payload: cr.id })
+            const roomHeader = {
+              name: roomDef.name,
+              asciiArt: roomDef.asciiArt,
+            }
+            terminalRef.current.setRoomHeader(roomHeader)
+          } else {
+            effects.roomTransition()
+          }
         }
 
         dispatch({
@@ -257,8 +324,34 @@ export default function App() {
 
   useKeyboardShortcuts(state, dispatch, getInputRef)
 
+  const handleChoosePortfolio = useCallback(() => {
+    dispatch({ type: ACTIONS.SET_PHASE, payload: 'portfolio' })
+  }, [])
+
+  const handleChooseGame = useCallback(() => {
+    hasShownInitialRoom.current = false
+    dispatch({ type: ACTIONS.SET_PHASE, payload: 'entrance' })
+  }, [])
+
+  const handleBackToLanding = useCallback(() => {
+    dispatch({ type: ACTIONS.SET_PHASE, payload: 'landing' })
+  }, [])
+
   return (
     <CRTScreen muted={muted} onToggleMute={toggleMute}>
+      {state.phase === 'landing' && (
+        <LandingPage
+          onChoosePortfolio={handleChoosePortfolio}
+          onChooseGame={handleChooseGame}
+          onMenuSelect={effects.menuSelect}
+        />
+      )}
+      {state.phase === 'portfolio' && (
+        <PortfolioPage
+          onBack={handleBackToLanding}
+          onMenuSelect={effects.menuSelect}
+        />
+      )}
       {state.phase === 'boot' && (
         <BootSequence onComplete={handleBootComplete} />
       )}

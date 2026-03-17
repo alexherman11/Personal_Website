@@ -1,5 +1,5 @@
 const initialState = {
-  phase: 'entrance',
+  phase: 'landing',
   currentRoom: 'entrance',
   visitedRooms: ['entrance'],
   inventory: [],
@@ -14,6 +14,7 @@ const initialState = {
   generatedRooms: {},
   dynamicExits: {},
   generatedRoomCount: 0,
+  generatedItemDefs: {},
 }
 
 export default initialState

@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  flex: 1;
   height: 100%;
   padding: 24px;
   padding-top: 56px;
@@ -19,10 +20,13 @@
   padding-bottom: 12px;
   margin-bottom: 8px;
   border-bottom: 1px solid rgba(128, 88, 0, 0.3);
+  text-align: center;
 }
 
 .terminal-room-header__art {
   margin-top: 4px;
+  display: inline-block;
+  text-align: left;
 }
 
 .terminal-line--room-name {
@@ -110,4 +114,30 @@
 
 .terminal-cursor {
   animation: blink 1s step-end infinite;
+}
+
+/* Room transition static burst */
+.terminal-transition {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  width: 100%;
+  max-width: 640px;
+}
+
+.terminal-static-line {
+  white-space: pre;
+  line-height: 1.2;
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  opacity: 0.7;
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+}
+
+.terminal-static-line--dissolving {
+  opacity: 0;
+  transform: translateY(-3px);
 }

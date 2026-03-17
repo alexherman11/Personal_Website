@@ -446,11 +446,18 @@ const clusterFallbacks = {
 class AmbientManager {
   currentRoom = null
   currentAmbient = null
+  ambientGain = null
   fadeTime = 1.0
+
+  init() {
+    if (this.ambientGain) return
+    this.ambientGain = new Tone.Gain(0.45).connect(audioEngine.masterGain)
+  }
 
   setRoom(roomId, cluster = null) {
     if (!audioEngine.initialized || roomId === this.currentRoom) return
     this.currentRoom = roomId
+    this.init()
 
     // Fade out current
     if (this.currentAmbient) {
@@ -470,7 +477,7 @@ class AmbientManager {
       config = clusterFallbacks[cluster]
     }
     if (config) {
-      this.currentAmbient = config(audioEngine.masterGain)
+      this.currentAmbient = config(this.ambientGain)
       this.currentAmbient.fadeIn(this.fadeTime)
     }
   }

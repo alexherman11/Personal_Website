@@ -9,7 +9,12 @@
       "mcp__Claude_Preview__preview_start",
       "Bash(npm install tone)",
       "Bash(curl -s -X POST http://localhost:3001/api/chat -H \"Content-Type: application/json\" -d '{\"message\":\"hello\",\"room\":\"grand_hall\",\"history\":[],\"gameState\":{\"phase\":\"playing\",\"flags\":{}}}' 2>&1)",
-      "Bash(node --env-file=.env -e \"console.log\\('Key exists:', !!process.env.ANTHROPIC_API_KEY\\); console.log\\('Key prefix:', process.env.ANTHROPIC_API_KEY?.substring\\(0, 10\\)\\)\")"
+      "Bash(node --env-file=.env -e \"console.log\\('Key exists:', !!process.env.ANTHROPIC_API_KEY\\); console.log\\('Key prefix:', process.env.ANTHROPIC_API_KEY?.substring\\(0, 10\\)\\)\")",
+      "Bash(ls -la ~/.claude/*.json)",
+      "Bash(ls -la /c/Projects/NewWebsite/*.html)",
+      "Bash(ls \"C:\\\\Projects\\\\NewWebsite\\\\scripts\"\" 2>/dev/null || ls \"C:ProjectsNewWebsite \")",
+      "Bash(node -e \"const j=JSON.parse\\(require\\(''fs''\\).readFileSync\\(require\\(''os''\\).homedir\\(\\)+''/.claude/.credentials.json'',''utf8''\\)\\); const o=j.claudeAiOauth; if\\(o\\){console.log\\(''Has refresh token:'', Boolean\\(o.refreshToken\\)\\); console.log\\(''Expires at:'', new Date\\(o.expiresAt\\).toISOString\\(\\)\\); console.log\\(''Expired:'', Date.now\\(\\) > o.expiresAt\\)} else {console.log\\(''No OAuth found''\\)}\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const env=fs.readFileSync\\(''C:/Projects/NewWebsite/.env'',''utf8''\\); console.log\\(''Has API key:'', env.includes\\(''ANTHROPIC_API_KEY''\\)\\)\")"
     ]
   }
 }

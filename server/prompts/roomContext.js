@@ -10,7 +10,22 @@ export default function buildRoomContext(gameState) {
 
   const parts = []
 
-  parts.push(`CURRENT LOCATION: ${currentRoom}`)
+  const roomName = gameState.currentRoomName || currentRoom
+  parts.push(`CURRENT LOCATION: ${roomName} (${currentRoom})`)
+
+  // Room exits — canonical truth about available directions
+  const roomExits = gameState.currentRoomExits || {}
+  const exitList = Object.entries(roomExits)
+    .map(([dir, target]) => dir)
+    .join(', ')
+  parts.push(`ROOM EXITS: ${exitList || 'none'}`)
+
+  // Room objects — what can be examined here
+  const roomObjects = gameState.currentRoomObjects || []
+  if (roomObjects.length > 0) {
+    parts.push(`ROOM OBJECTS: ${roomObjects.join('; ')}`)
+  }
+
   parts.push(`ROOMS VISITED: ${visitedRooms.join(', ')}`)
 
   // Full inventory with IDs so AI can check for duplicates
@@ -39,6 +54,16 @@ export default function buildRoomContext(gameState) {
   if (flagEntries.length > 0) {
     const flagStr = flagEntries.map(([k, v]) => `${k}=${v}`).join(', ')
     parts.push(`GAME FLAGS: ${flagStr}`)
+  }
+
+  // Hidden interaction keywords (so AI knows what secrets exist without seeing answers)
+  const hiddenKeywords = gameState.currentRoomHiddenKeywords || []
+  if (hiddenKeywords.length > 0) {
+    const hiList = hiddenKeywords.map(hi => {
+      const status = hi.triggered ? ' (already triggered)' : ''
+      return `${hi.key}: [${hi.keywords.join(', ')}]${status}`
+    })
+    parts.push(`ROOM HIDDEN INTERACTIONS (keywords only — do NOT reveal these): ${hiList.join('; ')}`)
   }
 
   // Room generation context
