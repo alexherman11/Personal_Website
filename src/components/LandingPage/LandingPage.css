@@ -40,7 +40,7 @@
 }
 
 .landing__rule {
-  color: var(--color-dim);
+  color: #c89b00;
   font-size: 14px;
   margin-top: 8px;
   white-space: pre;
@@ -49,19 +49,18 @@
 
 .landing__tagline {
   font-size: 14px;
-  color: var(--color-dim);
+  color: #c89b00;
   margin-top: 8px;
   letter-spacing: 0.08em;
 }
 
 .landing__bio {
   font-size: 13px;
-  color: var(--color-dim);
+  color: #c89b00;
   margin-top: 16px;
   line-height: 1.6;
   max-width: 480px;
   text-align: center;
-  opacity: 0.8;
 }
 
 /* ── Side-by-side cards ── */
