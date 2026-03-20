@@ -2,6 +2,11 @@ import express from 'express'
 import cors from 'cors'
 import rateLimit from 'express-rate-limit'
 import chatRoute from './routes/chat.js'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 const app = express()
 app.use(express.json())
@@ -16,6 +21,12 @@ app.use('/api', limiter)
 
 app.post('/api/chat', chatRoute)
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }))
+
+// Serve built frontend in production
+app.use(express.static(join(__dirname, '../dist')))
+app.get('/{*splat}', (req, res) => {
+  res.sendFile(join(__dirname, '../dist/index.html'))
+})
 
 const PORT = process.env.PORT || 3002
 app.listen(PORT, () => {
