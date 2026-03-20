@@ -149,7 +149,7 @@ export default function App() {
         hasShownInitialRoom.current = false
         dispatch({ type: ACTIONS.MOVE_TO_ROOM, payload: 'grand_hall' })
         dispatch({ type: ACTIONS.SET_PHASE, payload: 'boot' })
-      }, 4000)
+      }, 6000)
       return
     }
 
@@ -297,6 +297,39 @@ export default function App() {
             terminalRef.current.setRoomHeader(roomHeader)
           } else {
             effects.roomTransition()
+          }
+        }
+
+        // Handle AI-directed movement to existing rooms
+        if (data.stateChanges?.moveToRoom && terminalRef.current) {
+          const targetRoomId = data.stateChanges.moveToRoom
+          const currentExits = {
+            ...(getRoom(state.currentRoom, state)?.exits || {}),
+            ...(state.dynamicExits[state.currentRoom] || {}),
+          }
+          const validTargets = Object.values(currentExits)
+
+          if (validTargets.includes(targetRoomId)) {
+            const targetRoom = getRoom(targetRoomId, state)
+            if (targetRoom) {
+              effects.roomTransition()
+              await terminalRef.current.playTransition({ duration: 800 })
+              dispatch({ type: ACTIONS.MOVE_TO_ROOM, payload: targetRoomId })
+              const roomHeader = {
+                name: targetRoom.name,
+                asciiArt: targetRoom.asciiArt || [],
+              }
+              terminalRef.current.setRoomHeader(roomHeader)
+              // Show the room's standard description
+              const takenItems = state.roomItemsTaken[targetRoomId] || []
+              const lookResult = handleGameCommand({ type: 'look' }, {
+                ...state,
+                currentRoom: targetRoomId,
+              })
+              if (lookResult.output.length > 0) {
+                terminalRef.current.addLines(lookResult.output, { typewriter: true, speed: 20 })
+              }
+            }
           }
         }
 

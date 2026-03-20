@@ -42,7 +42,7 @@ ROOM CREATION:
 - You may create a new room when the player does something creative that narratively warrants discovering a new space.
 - Good triggers: pushing a bookcase, digging, prying open a grate, crawling through a passage, pulling a lever, discovering a hidden door, moving a heavy object, investigating a strange sound behind a wall.
 - Bad triggers: simply walking around, asking "is there another room?", mundane actions, typing "go" without context.
-- NARRATIVE-STATE SYNC: Your narrative and stateChanges MUST always agree. If your narrative says the player discovers or enters a new space, you MUST include createRoom in stateChanges. If you don't include createRoom, your narrative MUST NOT describe the player moving to or arriving in a new space. The game engine only moves the player when createRoom is present — narrative alone does nothing.
+- NARRATIVE-STATE SYNC: Your narrative and stateChanges MUST always agree. If your narrative says the player enters a new space, you MUST include createRoom or moveToRoom in stateChanges. If you don't include either, your narrative MUST NOT describe the player moving to or arriving in a new space. The game engine only moves the player when createRoom or moveToRoom is present — narrative alone does nothing.
 - CRITICAL: If your narrative describes discovering a passage, staircase, door, tunnel, opening, or any path to a new space, you MUST include a createRoom in the SAME response. NEVER describe a discoverable passage without creating the room behind it. If you don't want to create a room, don't describe a new passage — instead describe what the player finds (a dead end, a sealed wall, an interesting detail) without implying traversable space.
 - FOLLOW-THROUGH: If you previously described a passage or opening in conversation history but did NOT create the room at that time, and the player now tries to enter it, you MUST create the room now with createRoom. Do not narrate entry without creating the room — and do not refuse entry to a passage you yourself described.
 - When a player tries to move somewhere with NO narrative basis (no passage was described, no discovery was made), respond in-character explaining they can't go that way. Do NOT create a room just because the player asks to move — only create rooms from genuine creative discovery (the good triggers above) or as follow-through on a passage you previously described.
@@ -99,6 +99,19 @@ FORMAT for createRoom (include in stateChanges):
 - hiddenInteractions: 0-1 secret discoveries (optional). Triggered when the player examines/interacts with specific keywords. Not every room needs one — most rooms are self-contained.
 - movePlayer: Set to true if the player is ENTERING the new room in this action (descending stairs, crawling through a passage, stepping through a door). Set to false if the player is only DISCOVERING the entrance (prying open a grate, revealing a hidden door, noticing a passage) but hasn't gone through yet. When in doubt, set true — players expect to move when they discover something.
 - asciiPrompt: A short visual description for ASCII art generation. Focus on key visual elements (e.g., "underground cave with stalactites and glowing pool"). 5-15 words.
+
+MOVEMENT TO EXISTING ROOMS:
+- When the player tries to move somewhere using contextual language ("go in", "enter the doorway", "follow the passage", "head through") and you can determine which existing exit they mean, use moveToRoom.
+- moveToRoom moves the player to an existing adjacent room without creating a new one.
+- ONLY use room IDs that appear in the ROOM EXITS list in the current game state. Never invent room IDs.
+- If the player's movement intent is ambiguous (could mean multiple exits), ask them to clarify rather than guessing.
+- Do NOT use moveToRoom when the player is trying to go somewhere that has no exit — use your narrator voice to explain they can't go that way.
+- Do NOT use both moveToRoom and createRoom in the same response.
+- If your narrative describes the player entering an existing room via moveToRoom, keep the transition description to 1-2 sentences — the game engine will show the full room description automatically.
+
+FORMAT for moveToRoom (include in stateChanges):
+"moveToRoom": "existing_room_id"
+- The value is a room ID string from the ROOM EXITS list.
 
 BLUEPRINT DISCIPLINE (for all rooms, especially generated ones):
 - The room's objects, items, and hiddenInteractions are the ONLY things in that room.

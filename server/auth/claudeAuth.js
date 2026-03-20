@@ -45,7 +45,15 @@ export async function getClient() {
     return cachedClient
   }
 
-  // Try OAuth first
+  // Try API key first (most reliable)
+  const apiClient = getApiKeyClient()
+  if (apiClient) {
+    cachedClient = apiClient
+    cachedExpiresAt = Date.now() + 24 * 60 * 60 * 1000 // re-check daily
+    return cachedClient
+  }
+
+  // Fallback to OAuth
   try {
     const credentials = JSON.parse(readFileSync(CREDENTIALS_PATH, 'utf-8'))
     const oauth = credentials.claudeAiOauth
@@ -83,13 +91,5 @@ export async function getClient() {
     console.warn('OAuth auth failed:', err.message)
   }
 
-  // Fallback to API key
-  const apiClient = getApiKeyClient()
-  if (apiClient) {
-    cachedClient = apiClient
-    cachedExpiresAt = Date.now() + 24 * 60 * 60 * 1000 // re-check daily
-    return cachedClient
-  }
-
-  throw new Error('No valid auth: OAuth refresh failed and no ANTHROPIC_API_KEY in environment')
+  throw new Error('No valid auth: no ANTHROPIC_API_KEY in environment and OAuth refresh failed')
 }

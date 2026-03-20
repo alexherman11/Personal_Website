@@ -108,8 +108,25 @@ export default async function chatRoute(req, res) {
       }
     }
 
+    // Validate and sanitize moveToRoom if present
+    if (stateChanges.moveToRoom) {
+      const targetId = String(stateChanges.moveToRoom).replace(/[^a-z0-9_]/g, '').slice(0, 40)
+      const currentExits = gameState.currentRoomExits || {}
+      const validTargets = Object.values(currentExits)
+      if (validTargets.includes(targetId)) {
+        stateChanges.moveToRoom = targetId
+      } else {
+        stateChanges.moveToRoom = null
+      }
+    }
+
     // Don't allow both createItem and createRoom in same response
     if (stateChanges.createItem && stateChanges.createRoom) {
+      stateChanges.createRoom = null
+    }
+
+    // Don't allow both moveToRoom and createRoom in same response
+    if (stateChanges.moveToRoom && stateChanges.createRoom) {
       stateChanges.createRoom = null
     }
 

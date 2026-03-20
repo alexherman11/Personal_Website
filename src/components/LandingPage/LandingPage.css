@@ -1,5 +1,5 @@
 .landing {
-  height: 100%;
+  min-height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,7 +12,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 48px;
+  gap: 40px;
   animation: landing-fade-in 0.8s ease-out;
 }
 
@@ -25,6 +25,9 @@
 
 .landing__header {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .landing__name {
@@ -51,38 +54,52 @@
   letter-spacing: 0.08em;
 }
 
+.landing__bio {
+  font-size: 13px;
+  color: var(--color-dim);
+  margin-top: 16px;
+  line-height: 1.6;
+  max-width: 480px;
+  text-align: center;
+  opacity: 0.8;
+}
+
 /* ── Side-by-side cards ── */
 
 .landing__cards {
   display: flex;
   gap: 24px;
+  justify-content: center;
 }
 
 .landing__card {
   cursor: pointer;
   background: none;
-  border: none;
+  border: 1px solid var(--color-dim);
   padding: 0;
   outline: none;
   font-family: var(--font-mono);
   color: var(--color-dim);
   text-align: left;
-  transition: color 0.2s ease, text-shadow 0.2s ease;
-  min-width: 240px;
+  transition: color 0.2s ease, text-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+  flex: 1 1 0;
+  min-width: 200px;
+  max-width: 300px;
+  overflow: hidden;
 }
 
 .landing__card:hover,
 .landing__card:focus {
   color: var(--color-primary);
+  border-color: var(--color-primary);
   text-shadow: 0 0 8px rgba(255, 176, 0, 0.3);
+  box-shadow: 0 0 8px rgba(255, 176, 0, 0.15);
+  transform: translateY(-2px);
 }
 
-.landing__card-border-top,
-.landing__card-border-bot {
-  display: block;
-  white-space: pre;
-  font-size: 14px;
-  line-height: 1.2;
+.landing__card:focus {
+  outline: 1px solid rgba(255, 176, 0, 0.3);
+  outline-offset: 4px;
 }
 
 .landing__card-body {
@@ -100,18 +117,60 @@
   line-height: 1.5;
   margin: 0;
   opacity: 0.8;
+  overflow-wrap: break-word;
+}
+
+/* ── Hint text ── */
+
+.landing__hint {
+  font-size: 12px;
+  color: var(--color-dim);
+  opacity: 0.5;
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+/* ── Blinking cursor ── */
+
+.landing__cursor {
+  animation: cursor-blink 1s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 /* ── Responsive ── */
 
 @media (max-width: 580px) {
+  .landing {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: 40px;
+  }
+
+  .landing__inner {
+    gap: 20px;
+  }
+
   .landing__cards {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
 
   .landing__card {
-    min-width: unset;
+    flex: none;
     width: 100%;
+    max-width: 100%;
+  }
+
+  .landing__card-body {
+    padding: 12px 16px;
+  }
+
+  .landing__bio {
+    max-width: 100%;
+    margin-top: 8px;
   }
 }

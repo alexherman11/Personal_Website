@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import projects from '../../data/projects'
+import SimpleMarkdown from './SimpleMarkdown'
 import './PortfolioPage.css'
 
 const BIO = "I'm a passionate, skilled, conscious human being. I love working with language models. I care deeply about improving education, building community and protecting the world from the bad guys. I make art, food, and coding projects in my free time. Currently I'm working on a social media app called Agora."
@@ -88,7 +89,6 @@ export default function PortfolioPage({ onBack, onMenuSelect }) {
 
                 {isExpanded && (
                   <div className="project-card__details">
-                    <p className="project-card__description">{project.description}</p>
                     <div className="project-card__meta">
                       <span className="project-card__meta-item">
                         <span className="project-card__meta-label">Status:</span> {project.status}
@@ -113,6 +113,7 @@ export default function PortfolioPage({ onBack, onMenuSelect }) {
                         ))}
                       </div>
                     )}
+                    <SimpleMarkdown text={project.fullDescription} />
                   </div>
                 )}
               </div>

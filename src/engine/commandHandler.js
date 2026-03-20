@@ -2,6 +2,7 @@ import rooms from '../data/rooms'
 import itemDefs from '../data/items'
 import { ACTIONS } from './gameReducer'
 import { getRoom, getExits } from './roomLookup'
+import { extractDirection } from './commandParser'
 
 export default function handleCommand(parsedCommand, gameState) {
   const room = getRoom(gameState.currentRoom, gameState)
@@ -166,6 +167,23 @@ function handleGo(parsedCommand, room, gameState) {
             roomHeader: lookResult.roomHeader,
           }
         }
+      }
+    }
+  }
+
+  // Pass 3: Try extracting a canonical direction from verbose input
+  const rawInput = raw || direction
+  const extracted = extractDirection(rawInput)
+  if (extracted && mergedExits[extracted]) {
+    const targetRoomId = mergedExits[extracted]
+    const targetRoom = getRoom(targetRoomId, gameState)
+    if (targetRoom) {
+      const takenItems = gameState.roomItemsTaken[targetRoomId] || []
+      const lookResult = handleLook(targetRoom, takenItems, gameState)
+      return {
+        output: lookResult.output,
+        actions: [{ type: ACTIONS.MOVE_TO_ROOM, payload: targetRoomId }],
+        roomHeader: lookResult.roomHeader,
       }
     }
   }

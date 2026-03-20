@@ -276,6 +276,66 @@
   margin: 0;
 }
 
+/* ── SimpleMarkdown styles ── */
+
+.simple-md {
+  margin-top: 16px;
+}
+
+.simple-md__h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 20px 0 8px 0;
+  letter-spacing: 0.04em;
+}
+
+.simple-md__h4::before {
+  content: '> ';
+  color: var(--color-dim);
+}
+
+.simple-md > .simple-md__h4:first-child {
+  margin-top: 0;
+}
+
+.simple-md__p {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--color-primary);
+  margin: 0 0 12px 0;
+  opacity: 0.9;
+}
+
+.simple-md__ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px 0;
+}
+
+.simple-md__li {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--color-primary);
+  padding-left: 16px;
+  position: relative;
+  margin-bottom: 4px;
+  opacity: 0.9;
+}
+
+.simple-md__li::before {
+  content: '–';
+  position: absolute;
+  left: 0;
+  color: var(--color-dim);
+}
+
+.simple-md__li strong,
+.simple-md__p strong {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
 /* ── Responsive ── */
 
 @media (max-width: 480px) {

@@ -11,7 +11,8 @@ You must respond with valid JSON only. No markdown, no code fences, no extra tex
   "stateChanges": {
     "addFlag": null,
     "createItem": null,
-    "createRoom": null
+    "createRoom": null,
+    "moveToRoom": null
   }
 }
 
@@ -23,8 +24,10 @@ You must respond with valid JSON only. No markdown, no code fences, no extra tex
 - "stateChanges.createRoom" can create a new navigable room when the player does something creative. See ROOM CREATION rules.
   Format: { "id", "name", "description", "exitDirection", "returnDirection", "cluster", "objects" }
   Otherwise null.
+- "stateChanges.moveToRoom" can be set to a room ID string from ROOM EXITS when the player is clearly trying to move to an existing adjacent room but used contextual language the parser couldn't resolve. See MOVEMENT TO EXISTING ROOMS rules. Otherwise null.
 - Do NOT use both createItem and createRoom in the same response.
-- Do not include state changes for room moves or logbook opens — those are handled by the game engine.
+- Do NOT use both moveToRoom and createRoom in the same response.
+- Do not include state changes for logbook opens — those are handled by the game engine.
 - Keep the narrative to 2-4 sentences max (3-5 for room creation moments).`
 
 export default function assembleSystemPrompt(gameState) {

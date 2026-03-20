@@ -42,10 +42,14 @@ export default function LandingPage({ onChoosePortfolio, onChooseGame, onMenuSel
         <header className="landing__header">
           <h1 className="landing__name">ALEX HERMAN</h1>
           <div className="landing__rule" aria-hidden="true">
-            ┌──────────────────────────────────┐
+            ════════════════════════════════════
           </div>
           <p className="landing__tagline">
             Engineer · Builder · Explorer
+          </p>
+          <p className="landing__bio">
+            Hardware engineer, language model enthusiast, and community builder
+            studying at Cal Poly SLO. I make things that matter.
           </p>
         </header>
 
@@ -56,14 +60,12 @@ export default function LandingPage({ onChoosePortfolio, onChooseGame, onMenuSel
             onClick={handlePortfolio}
             aria-label="View My Portfolio"
           >
-            <span className="landing__card-border-top" aria-hidden="true">┌───────────────────────────┐</span>
             <div className="landing__card-body">
               <h2 className="landing__card-title">&gt; Portfolio</h2>
               <p className="landing__card-desc">
                 Projects, skills, and how to reach me.
               </p>
             </div>
-            <span className="landing__card-border-bot" aria-hidden="true">└───────────────────────────┘</span>
           </button>
 
           <button
@@ -72,16 +74,18 @@ export default function LandingPage({ onChoosePortfolio, onChooseGame, onMenuSel
             onClick={handleGame}
             aria-label="Enter The Depths"
           >
-            <span className="landing__card-border-top" aria-hidden="true">┌───────────────────────────┐</span>
             <div className="landing__card-body">
               <h2 className="landing__card-title">&gt; The Depths</h2>
               <p className="landing__card-desc">
-                Play a text adventure and discover who I really am.
+                A text adventure. Discover who I am.
               </p>
             </div>
-            <span className="landing__card-border-bot" aria-hidden="true">└───────────────────────────┘</span>
           </button>
         </div>
+
+        <p className="landing__hint" aria-hidden="true">
+          <span className="landing__cursor">_</span> use arrow keys or click to select
+        </p>
       </div>
     </div>
   )
