@@ -11,7 +11,7 @@ const SELECTIONS = {
   workshop: 'workshop_v1.txt',
   study: 'study_v1.txt',
   signal_room: 'signal_room_v2.txt',
-  grounds: 'grounds_v1.txt',
+  grounds: 'grounds_v2.txt',
   tree: 'tree_v3.txt',
   entrance: 'entrance_v2.txt',
   vault: 'vault_v2.txt',

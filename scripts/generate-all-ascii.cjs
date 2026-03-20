@@ -33,10 +33,10 @@ const { generateImage, pixelsToAscii, trimAsciiLines } = require('./ascii-utils.
 const ROOM_PROMPTS = {
   grand_hall: 'chandelier, ornate hanging chandelier with candles, centered, isolated object',
   archive: 'single tall bookshelf with books, front view, centered, isolated object',
-  workshop: 'soldering iron and circuit board on table, centered, isolated object',
+  workshop: 'blacksmith anvil with hammer resting on top, centered, isolated object',
   study: 'desk lamp on wooden desk, centered, isolated object',
   signal_room: 'vintage radio with antenna, front view, centered, isolated object',
-  grounds: 'small stone cottage, front view, centered, isolated object',
+  grounds: 'rolling hills landscape with gentle slopes, centered, wide view',
   tree: 'single large oak tree, centered, isolated object',
   entrance: 'arched wooden door, front view, centered, isolated object',
   vault: 'glowing portal, concentric circles of light, centered, isolated object',
