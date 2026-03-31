@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import './LandingPage.css'
 
-export default function LandingPage({ onChoosePortfolio, onChooseGame, onMenuSelect }) {
+export default function LandingPage({ onChoosePortfolio, onChooseGame, onMenuSelect, hasSave }) {
   const portfolioRef = useRef(null)
   const gameRef = useRef(null)
 
@@ -77,7 +77,7 @@ export default function LandingPage({ onChoosePortfolio, onChooseGame, onMenuSel
             <div className="landing__card-body">
               <h2 className="landing__card-title">&gt; The Depths</h2>
               <p className="landing__card-desc">
-                A text adventure. Discover who I am.
+                {hasSave ? 'Continue your adventure.' : 'A text adventure. Discover who I am.'}
               </p>
             </div>
           </button>

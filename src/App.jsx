@@ -363,8 +363,10 @@ export default function App() {
 
   const handleChooseGame = useCallback(() => {
     hasShownInitialRoom.current = false
-    dispatch({ type: ACTIONS.SET_PHASE, payload: 'entrance' })
-  }, [])
+    // Resume where they left off: if past the entrance, go straight to playing
+    const resumePhase = state.currentRoom !== 'entrance' ? 'playing' : 'entrance'
+    dispatch({ type: ACTIONS.SET_PHASE, payload: resumePhase })
+  }, [state.currentRoom])
 
   const handleBackToLanding = useCallback(() => {
     dispatch({ type: ACTIONS.SET_PHASE, payload: 'landing' })
@@ -377,6 +379,7 @@ export default function App() {
           onChoosePortfolio={handleChoosePortfolio}
           onChooseGame={handleChooseGame}
           onMenuSelect={effects.menuSelect}
+          hasSave={state.currentRoom !== 'entrance' || state.visitedRooms.length > 1}
         />
       )}
       {state.phase === 'portfolio' && (
@@ -391,6 +394,13 @@ export default function App() {
       {(state.phase === 'playing' || state.phase === 'entrance') && (
         <>
           <div className="game-container">
+            <button
+              className="exit-game-btn"
+              onClick={handleBackToLanding}
+              title="Return to menu"
+            >
+              [ESC]
+            </button>
             <InventoryPanel
               isOpen={state.panelOpen === 'inventory'}
               inventory={state.inventory}

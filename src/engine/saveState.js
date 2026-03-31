@@ -43,10 +43,15 @@ export function loadGame() {
       }
     }
 
-    // If saved mid-boot, skip to playing
+    // If saved mid-boot, treat as playing for resume purposes
     if (merged.phase === 'boot') {
       merged.phase = 'playing'
     }
+
+    // Always start at landing screen on load — game progress is preserved,
+    // but the player must choose to re-enter from the home screen
+    merged._savedPhase = merged.phase
+    merged.phase = 'landing'
 
     return merged
   } catch {
