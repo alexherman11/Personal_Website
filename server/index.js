@@ -26,6 +26,10 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }))
 const distPath = path.join(__dirname, '..', 'dist')
 app.use(express.static(distPath))
 app.get('{*path}', (req, res) => {
+  // Let requests for actual files (e.g. .pdf, .png) 404 instead of serving index.html
+  if (path.extname(req.path)) {
+    return res.status(404).end()
+  }
   res.sendFile(path.join(distPath, 'index.html'))
 })
 
