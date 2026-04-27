@@ -2,6 +2,7 @@ import { useReducer, useRef, useCallback, useEffect } from 'react'
 import CRTScreen from './components/CRTScreen/CRTScreen'
 import LandingPage from './components/LandingPage/LandingPage'
 import PortfolioPage from './components/PortfolioPage/PortfolioPage'
+import FlyerPage from './components/FlyerPage/FlyerPage'
 import BootSequence from './components/BootSequence/BootSequence'
 import Terminal from './components/Terminal/Terminal'
 import InventoryPanel from './components/InventoryPanel/InventoryPanel'
@@ -24,7 +25,25 @@ import ambientManager from './audio/ambients'
 import musicManager from './audio/music'
 import { getRoom, getGenerationDepth } from './engine/roomLookup'
 
+function isFlyerRoute() {
+  if (typeof window === 'undefined') return false
+  return /^\/flyer\/?$/i.test(window.location.pathname)
+}
+
 export default function App() {
+  // Stand-alone flyer page — bypass game shell entirely so the QR-coded URL
+  // loads fast on mobile and doesn't depend on any CRT/game state.
+  if (isFlyerRoute()) {
+    return (
+      <CRTScreen muted={true} onToggleMute={() => {}} showMute={false}>
+        <FlyerPage />
+      </CRTScreen>
+    )
+  }
+  return <GameApp />
+}
+
+function GameApp() {
   const [state, dispatch] = useReducer(gameReducer, initialState, () => loadGame() || initialState)
   const terminalRef = useRef(null)
   const hasShownInitialRoom = useRef(false)
