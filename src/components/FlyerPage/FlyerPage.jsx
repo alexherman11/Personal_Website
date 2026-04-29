@@ -83,7 +83,7 @@ export default function FlyerPage() {
             I have been following developments in AI closely over the past
             three years, and I have seen AI come from something that could
             barely write a paragraph, to something that could help me design
-            the flyer you just saw.
+            this flyer and build this form.
           </p>
           <p>
             Despite the many technological advancements I see it enabling,
@@ -160,7 +160,7 @@ export default function FlyerPage() {
             <textarea
               id="flyer-questions"
               className="flyer__textarea"
-              placeholder="Anything you want me to research and bring a paper on..."
+              placeholder="What are you curious about? What worries you? What experience do you have with AI?"
               value={questions}
               onChange={(e) => setQuestions(e.target.value)}
               maxLength={4000}
