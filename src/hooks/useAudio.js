@@ -4,6 +4,8 @@ import audioEngine from '../audio/audioEngine'
 export default function useAudio() {
   const [muted, setMuted] = useState(false)
   const [initialized, setInitialized] = useState(false)
+  const [musicVolume, setMusicVolumeState] = useState(() => audioEngine.getMusicVolume())
+  const [keystrokeVolume, setKeystrokeVolumeState] = useState(() => audioEngine.getKeystrokeVolume())
   const initingRef = useRef(false)
 
   const ensureInit = useCallback(async () => {
@@ -29,8 +31,26 @@ export default function useAudio() {
     setMuted(audioEngine.isMuted())
   }, [])
 
+  const setMusicVolume = useCallback((v) => {
+    audioEngine.setMusicVolume(v)
+    setMusicVolumeState(audioEngine.getMusicVolume())
+  }, [])
+
+  const setKeystrokeVolume = useCallback((v) => {
+    audioEngine.setKeystrokeVolume(v)
+    setKeystrokeVolumeState(audioEngine.getKeystrokeVolume())
+  }, [])
+
   // Cleanup on unmount
   useEffect(() => () => audioEngine.dispose(), [])
 
-  return { muted, toggleMute, initialized }
+  return {
+    muted,
+    toggleMute,
+    initialized,
+    musicVolume,
+    setMusicVolume,
+    keystrokeVolume,
+    setKeystrokeVolume,
+  }
 }

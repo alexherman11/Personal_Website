@@ -1054,7 +1054,9 @@ class MusicManager {
 
   init() {
     if (this.musicGain) return
-    this.musicGain = new Tone.Gain(0.35).connect(audioEngine.masterGain)
+    // Pass through 1.0 — actual user-facing volume lives on
+    // audioEngine.musicGain so the settings slider can scrub it directly.
+    this.musicGain = new Tone.Gain(1.0).connect(audioEngine.musicGain || audioEngine.masterGain)
     this.sharedFilter = new Tone.Filter(3000, 'lowpass').connect(this.musicGain)
     this.sharedReverb = new Tone.Freeverb({ roomSize: 0.7, dampening: 3000, wet: 0.3 }).connect(this.sharedFilter)
     Tone.Transport.bpm.value = BPM

@@ -14,7 +14,9 @@ function getKeystrokeSynth() {
     const gain = new Tone.Gain(0.04)
     keystrokeSynth.connect(filter)
     filter.connect(gain)
-    gain.connect(audioEngine.masterGain)
+    // Route through the user-controlled keystroke bus so the settings slider
+    // can scale text sounds independently of music.
+    gain.connect(audioEngine.keystrokeGain || audioEngine.masterGain)
   }
   return keystrokeSynth
 }

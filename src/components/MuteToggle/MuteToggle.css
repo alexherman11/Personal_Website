@@ -1,8 +1,12 @@
-.mute-toggle {
+.settings {
   position: absolute;
   bottom: 16px;
   right: 16px;
   z-index: 15;
+  font-family: var(--font-mono);
+}
+
+.settings__toggle {
   background: transparent;
   border: 1px solid var(--color-dim);
   color: var(--color-dim);
@@ -13,7 +17,90 @@
   transition: color 0.2s, border-color 0.2s;
 }
 
-.mute-toggle:hover {
+.settings__toggle:hover,
+.settings[aria-expanded] .settings__toggle[aria-expanded="true"] {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.settings__panel {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  width: 200px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-dim);
+  background: rgba(10, 10, 10, 0.92);
+  color: var(--color-primary);
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings__row {
+  display: grid;
+  grid-template-columns: 38px 1fr 24px;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings__label {
+  color: var(--color-dim);
+  text-transform: lowercase;
+  letter-spacing: 0.5px;
+}
+
+.settings__value {
+  color: var(--color-dim);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Range slider — minimal amber-on-dark */
+.settings__slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  background: var(--color-dim);
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+}
+.settings__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8px;
+  height: 12px;
+  background: var(--color-primary);
+  border: 0;
+  cursor: pointer;
+  border-radius: 0;
+}
+.settings__slider::-moz-range-thumb {
+  width: 8px;
+  height: 12px;
+  background: var(--color-primary);
+  border: 0;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.settings__mute {
+  background: transparent;
+  border: 1px solid var(--color-dim);
+  color: var(--color-dim);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 6px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  margin-top: 2px;
+}
+
+.settings__mute:hover {
   color: var(--color-primary);
   border-color: var(--color-primary);
 }

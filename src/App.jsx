@@ -47,7 +47,11 @@ function GameApp() {
   const [state, dispatch] = useReducer(gameReducer, initialState, () => loadGame() || initialState)
   const terminalRef = useRef(null)
   const hasShownInitialRoom = useRef(false)
-  const { muted, toggleMute, initialized: audioReady } = useAudio()
+  const {
+    muted, toggleMute, initialized: audioReady,
+    musicVolume, setMusicVolume,
+    keystrokeVolume, setKeystrokeVolume,
+  } = useAudio()
 
   // Track previous values for audio triggers
   const prevPanelRef = useRef(null)
@@ -392,7 +396,14 @@ function GameApp() {
   }, [])
 
   return (
-    <CRTScreen muted={muted} onToggleMute={toggleMute}>
+    <CRTScreen
+      muted={muted}
+      onToggleMute={toggleMute}
+      musicVolume={musicVolume}
+      onMusicVolumeChange={setMusicVolume}
+      keystrokeVolume={keystrokeVolume}
+      onKeystrokeVolumeChange={setKeystrokeVolume}
+    >
       {state.phase === 'landing' && (
         <LandingPage
           onChoosePortfolio={handleChoosePortfolio}
