@@ -8,11 +8,11 @@ const rooms = {
 
     description: [
 
-      'You stand in a vast hall that seems to stretch beyond what the walls should allow. A chandelier of amber glass casts warm light across an ornate rug. Tall doorways lead in four directions, each framing darkness beyond.',
+      'You stand in a vast hall that seems to stretch beyond what the walls should allow. An amber-glass chandelier hangs from a ceiling lost in shadow, throwing warm pools of light across an ornate woven rug. Tall doorways open in four directions, each framing darkness beyond. The air carries the faint sweetness of beeswax and a slow, deep silence — the silence of a room that listens back.',
 
       '',
 
-      'A portrait hangs on the eastern wall. A carved inscription traces the perimeter of the floor. A worn welcome mat rests near where you entered.',
+      'A portrait hangs on the eastern wall. A carved inscription spirals across the stone floor. A worn welcome mat rests near where you came in. A grandfather clock ticks somewhere in the corner, just out of sight. A small side table holds a leather-bound visitors’ register, a stub of beeswax candle, and a tied-down fountain pen.',
 
     ],
 
@@ -83,8 +83,37 @@ const rooms = {
 
         keywords: ['mat', 'welcome', 'welcome mat', 'rug'],
 
-        examineText: 'The mat is worn but beatiful. It appears to be handwoven, from some ancient time before machines. You wonder at the strange patterns woven into it. Some appear to be some arcane script but it means nothing to you.',
+        examineText: 'The mat is worn but beautiful. It appears to be handwoven, from some ancient time before machines. The patterns hold a strange symmetry — almost as if something is described in their weave. You wonder if you might lift it to see what is underneath.',
 
+      },
+
+      chandelier: {
+        id: 'chandelier',
+        name: 'the amber chandelier',
+        keywords: ['chandelier', 'light', 'lights', 'amber'],
+        examineText: 'Hundreds of amber-glass droplets, lit from within by a flame you cannot quite locate. The chandelier turns very slowly, as though pushed by a draft you cannot feel. Each droplet, when caught by your eye, seems to hold a tiny scene — a beach, a workbench, a tree.',
+      },
+
+      grandfather_clock: {
+        id: 'grandfather_clock',
+        name: 'a grandfather clock',
+        keywords: ['clock', 'grandfather', 'grandfather clock', 'pendulum', 'tick'],
+        examineText: 'A tall walnut-cased clock with a brass pendulum the size of a dinner plate. The face is hand-painted; the hands are slightly off-true. It strikes the hour with a single low note that you feel in the floor before you hear it.',
+      },
+
+      visitors_register: {
+        id: 'visitors_register',
+        name: 'the visitors’ register',
+        keywords: ['register', 'visitors register', 'visitors', 'guestbook', 'guest book', 'sign', 'book on the table'],
+        examineText: null,
+        logbookId: 'visitor_register',
+      },
+
+      side_table: {
+        id: 'side_table',
+        name: 'a small side table',
+        keywords: ['table', 'side table'],
+        examineText: 'A walnut side table the height of your thigh. The wood has been polished by a hundred years of small placements — keys, candles, hats. There is the faint ring of a wineglass left a long time ago.',
       },
 
     },
@@ -101,9 +130,31 @@ const rooms = {
 
       },
 
+      candle_stub: {
+        id: 'candle_stub',
+        keywords: ['candle', 'stub', 'candle stub', 'beeswax'],
+        takeText: 'You pocket the candle stub. It is heavier than it looks. The wick still smells of recent flame.',
+      },
+
+      visitors_pen: {
+        id: 'visitors_pen',
+        keywords: ['pen', 'visitors pen', 'fountain pen', 'guestbook pen'],
+        takeText: 'You untie the leather cord and slip the pen into your pack. The nib has been worn smooth by signature after signature. The reservoir is full.',
+      },
+
     },
 
-    hiddenInteractions: {},
+    hiddenInteractions: {
+
+      lift_mat: {
+        keywords: ['lift mat', 'lift the mat', 'move mat', 'move the mat', 'pull mat', 'pull up mat', 'under mat', 'under the mat', 'beneath mat', 'beneath the mat', 'check mat', 'check under mat', 'flip mat', 'flip the mat', 'pick up mat'],
+        responseText: 'You crouch and lift one corner of the heavy welcome mat.\n\nUnderneath: a brass-ringed trapdoor set into the stone floor, polished smooth by long use, an iron handle waiting at one end. A draft rises from the seam — cool, dim, smelling of cedar and old paper. A way down.',
+        repeatText: 'The trapdoor is still here, beneath the lifted mat. You can go DOWN whenever you like.',
+        flag: { key: 'found_trapdoor', value: true },
+        revealsExit: { direction: 'down', to: 'memory_cellar' },
+      },
+
+    },
 
     cluster: 'indoor',
 
@@ -119,11 +170,11 @@ const rooms = {
 
     description: [
 
-      'Towering shelves of books line every wall, reaching up into shadows where the ceiling should be. A reading desk holds a single candle that burns without diminishing. The air smells of old paper and quiet thought.',
+      'Towering shelves of books line every wall, reaching up into shadows where the ceiling should be. A reading desk holds a single candle that burns without diminishing. A rolling brass-railed ladder leans against the shelves, its wheels worn from a thousand patient ascents. The air smells of old paper, leather, and the faint sweetness of slow-melting beeswax.',
 
       '',
 
-      'A tall bookshelf dominates the north wall. A leather-bound journal lies open on the desk. A stack of letters rests beside it.',
+      'A tall bookshelf dominates the north wall. A leather-bound journal lies open on the desk. A stack of letters rests beside it. A tarnished brass wax-seal stamp, a glass bottle of iron-gall ink, and a folded note are arrayed across the writing surface like a small shrine to correspondence.',
 
     ],
 
@@ -177,10 +228,24 @@ const rooms = {
 
         name: 'a stack of letters',
 
-        keywords: ['letters', 'stack', 'mail'],
+        keywords: ['letters', 'stack', 'mail', 'correspondence'],
 
         examineText: 'The letters are addressed to no one in particular — more like manifestos than correspondence. They speak of democracy, of communities that govern themselves, of unseating corruption through transparency, not force. The handwriting grows more urgent toward the bottom of the stack.',
 
+      },
+
+      candle: {
+        id: 'candle',
+        name: 'the candle on the reading desk',
+        keywords: ['candle', 'flame', 'reading candle'],
+        examineText: 'A single candle in a brass holder, burning steadily on the reading desk. Strangely, no wax has dripped — the candle never seems to shorten. The flame is unmoved by your breath. Whoever lit this is not in a hurry to lose the light.',
+      },
+
+      brass_ladder: {
+        id: 'brass_ladder',
+        name: 'a rolling brass-railed ladder',
+        keywords: ['ladder', 'brass ladder', 'rolling ladder', 'rails', 'rail'],
+        examineText: 'A library ladder mounted on a long brass rail that runs the length of the bookshelf. The rungs are worn slightly concave at the centers. Climbing it would let you reach the highest shelves — though the ceiling above the shelves disappears into shadow that may not, strictly speaking, be a ceiling.',
       },
 
     },
@@ -195,6 +260,24 @@ const rooms = {
 
         takeText: 'You slide the dusty tome from its shelf. The leather binding is cool to the touch, and the title — "On the Nature of Minds" — seems to shimmer faintly in the candlelight. You tuck it away carefully.',
 
+      },
+
+      wax_seal: {
+        id: 'wax_seal',
+        keywords: ['wax seal', 'seal', 'wax', 'stamp', 'seal stamp', 'brass stamp'],
+        takeText: 'You pick up the brass wax-seal stamp. It is cool and surprisingly heavy. The face of the seal shows a spiral with a single eye at its center.',
+      },
+
+      ink_bottle: {
+        id: 'ink_bottle',
+        keywords: ['ink', 'ink bottle', 'bottle', 'iron-gall'],
+        takeText: 'You stopper the ink bottle and slip it carefully into your pack. It is half full and surprisingly heavy for its size.',
+      },
+
+      folded_note: {
+        id: 'folded_note',
+        keywords: ['note', 'folded note', 'paper', 'scrap', 'folded paper'],
+        takeText: 'You unfold the note partway, read the careful hand inside, and refold it. You decide to keep it.',
       },
 
     },
@@ -227,11 +310,11 @@ const rooms = {
 
     description: [
 
-      'A cluttered workbench dominates the room, covered in circuit boards, soldering irons, and loose wires. Blueprints are pinned to every available wall surface. The air carries a faint tang of solder flux and ozone.',
+      'A cluttered workbench dominates the room, covered in circuit boards, soldering irons, and loose wires. Blueprints are pinned to every available wall surface. A digital oscilloscope hums quietly on a shelf above, its screen still showing a captured square wave from someone’s last debug session. Organized parts bins line the wall — resistors, capacitors, headers, sensors — all labeled in a careful hand. The air carries solder flux, ozone, and the warmth of a room where things get made.',
 
       '',
 
-      'On the bench you see a circuit board labeled "OTO," a small speaker emitting faint beats, and a peculiar foot pedal. Two thick logbooks sit on a shelf above the workbench. A set of rolled blueprints and a strange gear catch your eye.',
+      'On the bench you see a circuit board labeled "OTO," a small speaker emitting faint beats, and a peculiar foot pedal. Two thick logbooks sit on a shelf above the workbench. A set of rolled blueprints, a strange gear, an oscilloscope probe, and a small bare PCB are scattered amongst the work-in-progress.',
 
     ],
 
@@ -332,6 +415,20 @@ const rooms = {
 
       },
 
+      oscilloscope: {
+        id: 'oscilloscope',
+        name: 'a digital oscilloscope',
+        keywords: ['oscilloscope', 'scope', 'screen'],
+        examineText: 'A four-channel digital oscilloscope, knobs slightly worn at the most-used positions. The screen still shows a frozen capture from someone’s last debug session — a square wave with a slow exponential undershoot, the kind of curve that means a missing pull-down resistor. A sticky note attached reads: "always probe the ground first."',
+      },
+
+      parts_bins: {
+        id: 'parts_bins',
+        name: 'organized parts bins',
+        keywords: ['bins', 'parts', 'parts bins', 'components', 'resistors', 'capacitors'],
+        examineText: 'A wall of small drawer bins, each labeled in pencil: 0805 resistors (decade values), 1uF ceramic, 10uF tantalum, MOSFETs (N-channel), MOSFETs (P-channel), JST connectors (2-pin, 3-pin, 4-pin), pin headers (male, 2.54mm), pin headers (female, 2.54mm)... and so on, in cascading rows. Each drawer is exactly half full — replenished, never depleted.',
+      },
+
     },
 
     items: {
@@ -386,11 +483,11 @@ const rooms = {
 
     description: [
 
-      'A tidy desk sits beneath a diploma mounted on the wall. A filing cabinet stands in the corner, each drawer carefully labeled. A small lamp casts a warm circle of light. A ticking clock somewhere marks the passage of time.',
+      'A tidy desk sits beneath a diploma mounted on the wall. A filing cabinet stands in the corner, each drawer carefully labeled. A small green-shaded lamp casts a warm circle of light across the desktop. A small bookshelf nearby holds reference manuals, datasheets, and a single dog-eared copy of the Tao Te Ching. A ticking clock somewhere marks the passage of time at a slightly slower rate than is strictly accurate.',
 
       '',
 
-      'A framed photo sits on the desk beside a sealed letter.',
+      'A framed photo sits on the desk beside a sealed letter, a black fountain pen, and a small stack of business cards. A wooden slot tray holds folded mail — none of it urgent, none of it ignored.',
 
     ],
 
@@ -475,8 +572,20 @@ const rooms = {
 
         keywords: ['letter', 'sealed letter', 'sealed', 'envelope'],
 
-        takeText: 'You pick up the sealed letter. The wax seal is warm to the touch, as though it was pressed only moments ago. Whatever is inside feels substantial — pages of careful work.',
+        takeText: 'You pick up the sealed letter. The wax seal is warm to the touch, as though it was pressed only moments ago. Whatever is inside feels substantial — pages of careful work. (Try "read letter" once it is in your pack.)',
 
+      },
+
+      business_card: {
+        id: 'business_card',
+        keywords: ['business card', 'card', 'cards', 'card stack'],
+        takeText: 'You take a business card from the top of the stack and tuck it into your pocket. The cardstock has a pleasant weight.',
+      },
+
+      fountain_pen: {
+        id: 'fountain_pen',
+        keywords: ['pen', 'fountain pen', 'black pen', 'desk pen'],
+        takeText: 'You cap the fountain pen and slide it into your pack. The barrel is engraved: "Learn by Doing."',
       },
 
     },
@@ -509,11 +618,11 @@ const rooms = {
 
     description: [
 
-      'Banks of radio equipment line the walls, dials glowing amber in the dim light. A crackling speaker emits bursts of static between fragments of distant voices. Wires run everywhere like the nervous system of some vast machine.',
+      'Banks of radio equipment line the walls, dials glowing amber in the dim light. A crackling speaker emits bursts of static between fragments of distant voices. Wires run everywhere like the nervous system of some vast machine. Above one rack, an antenna rotator slowly tracks something across the sky. The smell is bakelite and ozone — the smell of a room that has been powered on for decades.',
 
       '',
 
-      'A radio console dominates the center. A morse code key sits ready for input. A logbook of frequencies lies open nearby. A framed photo of two people hangs on the wall.',
+      'A radio console dominates the center. A morse code key sits ready for input. A logbook of frequencies lies open nearby. A framed photo of two people hangs on the wall. A heavy pair of bakelite headphones rests on a hook, and a laminated morse-code reference card is pinned to the desk beside the key.',
 
     ],
 
@@ -586,6 +695,13 @@ const rooms = {
 
       },
 
+      antenna_rotator: {
+        id: 'antenna_rotator',
+        name: 'an antenna rotator',
+        keywords: ['rotator', 'antenna', 'antenna rotator', 'mast'],
+        examineText: 'A heavy steel rotator mounted to a mast that disappears through the ceiling. It is currently pointing toward the northeast and turning very slowly clockwise. Whatever it is tracking is in no hurry to stop being tracked.',
+      },
+
     },
 
     items: {
@@ -598,6 +714,18 @@ const rooms = {
 
         takeText: 'You carefully remove the radio crystal from its housing. It hums faintly in your palm, resonating with some frequency just below the threshold of hearing. The radio console flickers but continues to function.',
 
+      },
+
+      bakelite_headphones: {
+        id: 'bakelite_headphones',
+        keywords: ['headphones', 'bakelite', 'bakelite headphones', 'phones'],
+        takeText: 'You lift the heavy bakelite headphones off their hook. The cord coils around your wrist as you pack them. You can almost hear something through them already.',
+      },
+
+      morse_card: {
+        id: 'morse_card',
+        keywords: ['morse card', 'reference card', 'card', 'morse reference'],
+        takeText: 'You unpin the laminated morse card and slip it into your pack. Dots and dashes for every letter, every number — including SOS, in slightly heavier ink than the rest.',
       },
 
     },
@@ -630,11 +758,11 @@ const rooms = {
 
     description: [
 
-      'Wild grass stretches across a coastal hillside under a vast sky. The air smells of eucalyptus and salt. Old stone walls trace property lines that no one has respected in decades.',
+      'Wild grass stretches across a coastal hillside under a vast sky. The air smells of eucalyptus and salt. Old stone walls trace property lines that no one has respected in decades. A red-tailed hawk wheels in slow circles overhead, watching the grass for movement. Far below, the Pacific glints like beaten silver.',
 
       '',
 
-      'The house looms behind you, its front door still locked. In the distance, on a gentle rise, stands a magnificent gnarled oak — solitary, ancient, and somehow inviting.',
+      'The house looms behind you, its front door still locked. In the distance, on a gentle rise, stands a magnificent gnarled oak — solitary, ancient, and somehow inviting. Closer in, half-swallowed by the grass, you can make out the rectangle of a long-abandoned garden bed. A few smooth stones, sun-warmed, lie scattered around your feet, and a single hawk feather drifts down through the air toward the path.',
 
     ],
 
@@ -688,11 +816,55 @@ const rooms = {
 
       },
 
+      ruined_garden: {
+        id: 'ruined_garden',
+        name: 'an abandoned garden bed',
+        keywords: ['garden', 'garden bed', 'flower bed', 'flowers', 'beds', 'overgrown', 'rectangle', 'patch'],
+        examineText: 'A rectangular bed of dark soil, mostly reclaimed by grass and wild fennel. Faint stake-rows still mark where rows were planted. At the far end, half-buried under a tangle of overgrown ivy, you can just make out the corner of what looks like a glass pane — the wall of a small structure that has been almost entirely consumed by green.',
+      },
+
+      hawk: {
+        id: 'hawk',
+        name: 'the red-tailed hawk',
+        keywords: ['hawk', 'red-tailed hawk', 'bird', 'red tail'],
+        examineText: 'The hawk drifts on a thermal, head tipped down, watching for any movement in the grass. Its tail is a banner of warm rust-red. Every now and then it gives a thin, descending cry — the sound that hawks always make in films, played here by an actual hawk who has never seen one.',
+      },
+
     },
 
-    items: {},
+    items: {
 
-    hiddenInteractions: {},
+      smooth_stone: {
+        id: 'smooth_stone',
+        keywords: ['stone', 'smooth stone', 'rock', 'pocket stone'],
+        takeText: 'You pick up the smoothest of the stones at your feet. It fits perfectly into the curve of your palm, warm from the sun.',
+      },
+
+      eucalyptus_leaf: {
+        id: 'eucalyptus_leaf',
+        keywords: ['leaf', 'eucalyptus', 'eucalyptus leaf', 'sickle leaf'],
+        takeText: 'You pluck a long sickle-shaped eucalyptus leaf from a low branch and tuck it carefully into your pack. Crushed faintly between your fingers, it releases a sharp, clean sweetness.',
+      },
+
+      hawk_feather: {
+        id: 'hawk_feather',
+        keywords: ['feather', 'hawk feather', 'plume'],
+        takeText: 'You lift the feather from the path. It is barred brown-and-white and stiff at the quill. Holding it makes you feel briefly aerial.',
+      },
+
+    },
+
+    hiddenInteractions: {
+
+      part_ivy: {
+        keywords: ['part ivy', 'pull ivy', 'pull aside ivy', 'move ivy', 'push ivy', 'examine ivy', 'ivy', 'overgrown ivy', 'go through ivy', 'climb through ivy', 'enter garden', 'go to garden', 'glass', 'glass pane', 'pane', 'structure'],
+        responseText: 'You wade out into the abandoned garden bed and pull aside the curtain of ivy. Behind it: a small glass-paneled greenhouse, leaning slightly, its frame green with weathered copper. The door is unlatched and standing slightly ajar — as though waiting for someone to push it the rest of the way open.\n\nThe greenhouse lies to the WEST.',
+        repeatText: 'The ivy parts easily for you now. The greenhouse stands to the WEST.',
+        flag: { key: 'found_greenhouse', value: true },
+        revealsExit: { direction: 'west', to: 'greenhouse' },
+      },
+
+    },
 
     cluster: 'outdoor',
 
@@ -931,6 +1103,197 @@ const rooms = {
     objects: {},
 
     items: {},
+
+    hiddenInteractions: {},
+
+    cluster: 'hidden',
+
+  },
+
+
+
+  greenhouse: {
+
+    id: 'greenhouse',
+
+    name: 'The Greenhouse',
+
+    description: [
+
+      'You step inside the greenhouse. Sunlight filters through panes streaked with moss and time, cut into long green diamonds across the brick floor. The air is humid, warm, almost tropical — a contained microclimate that has gone on quietly tending itself for years. Tomato vines have outgrown their stakes; a fig tree leans against one wall; lavender and rosemary press against the door you came through.',
+
+      '',
+
+      'A long potting bench runs the length of the back wall, crowded with terracotta pots, a battered watering can, and a small wooden seed tray. A folded chair waits in one corner. A few pressed flowers and a faded packet of seeds rest on the bench, as though set out for whoever might come next.',
+
+    ],
+
+    asciiArt: [
+      '',
+      '   ╔════════════════════════════════════╗',
+      '   ║ ╱╲ ╱╲ ╱╲ ╱╲ ╱╲ ╱╲ ╱╲ ╱╲ ╱╲ ╱╲ ╱╲ ║',
+      '   ║ ╲╱ ╲╱ ╲╱ ╲╱ ╲╱ ╲╱ ╲╱ ╲╱ ╲╱ ╲╱ ╲╱ ║',
+      '   ║   ▓▓▓▓     ░░░░░     ▓▓▓▓        ║',
+      '   ║  ▓▓▓▓▓▓   ░░░░░░░   ▓▓▓▓▓▓       ║',
+      '   ║   ▓▓▓▓     ░░░░░     ▓▓▓▓        ║',
+      '   ║    ┃        ┃          ┃         ║',
+      '   ║   ▒▒▒      ▒▒▒        ▒▒▒        ║',
+      '   ║▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒║',
+      '   ╚════════════════════════════════════╝',
+    ],
+
+    exits: {
+
+      east: 'grounds',
+
+    },
+
+    exitAliases: {
+
+      east: ['back', 'go back', 'leave', 'return', 'out', 'go out', 'outside', 'grounds'],
+
+    },
+
+    objects: {
+
+      potting_bench: {
+        id: 'potting_bench',
+        name: 'the long potting bench',
+        keywords: ['bench', 'potting', 'potting bench', 'workbench'],
+        examineText: 'A heavy wood-and-iron potting bench, its surface dusted with old soil and the faint gold of dried lavender. Pencil marks underneath show plant rotations going back many seasons. Whoever worked here was patient, methodical, and a little bit in love with growing things.',
+      },
+
+      watering_can: {
+        id: 'watering_can',
+        name: 'a battered watering can',
+        keywords: ['watering can', 'can', 'watering'],
+        examineText: 'A galvanized watering can with a long sprinkler rose. The metal is dimpled with dents from being knocked against pots and posts. Half-full of cool water, somehow — though no one has been here in a long time.',
+      },
+
+      tomato_vines: {
+        id: 'tomato_vines',
+        name: 'overgrown tomato vines',
+        keywords: ['tomato', 'tomatoes', 'vines', 'vine'],
+        examineText: 'Tomato vines have escaped their stakes and grown up the inside of the glass roof, throwing curtains of green leaves across the panes. A few small green fruits hide among the foliage, hard and stubbornly unripe. They smell exactly the way summer should smell.',
+      },
+
+      glass_panes: {
+        id: 'glass_panes',
+        name: 'the moss-streaked glass panes',
+        keywords: ['glass', 'panes', 'pane', 'roof', 'walls'],
+        examineText: 'The panes are old, hand-poured, slightly bubbled. The light that comes through them is filtered thick and green by moss in the seams. Looking up, you can see the silhouette of the hawk passing over and over again, slow as a clock.',
+      },
+
+    },
+
+    items: {
+
+      pressed_flower: {
+        id: 'pressed_flower',
+        keywords: ['flower', 'pressed flower', 'poppy', 'pressed'],
+        takeText: 'You pick up the pressed California poppy with the care it deserves. It is paper-thin and the color of a slow sunset. The note tucked behind it makes you smile.',
+      },
+
+      seed_packet: {
+        id: 'seed_packet',
+        keywords: ['seeds', 'seed packet', 'packet', 'tomato seeds'],
+        takeText: 'You slip the seed packet into your pack. The seeds rattle gently. You imagine them, planted in the right place, becoming something.',
+      },
+
+    },
+
+    hiddenInteractions: {},
+
+    cluster: 'outdoor',
+
+  },
+
+
+
+  memory_cellar: {
+
+    id: 'memory_cellar',
+
+    name: 'The Memory Cellar',
+
+    description: [
+
+      'A short flight of stone steps brings you into a low-ceilinged cellar beneath the hall. A single bare bulb on a long brass chain glows steady and gold. The air is cool, dry, faintly resinous — cedar planks line the walls. Shelves of carefully labeled boxes recede into the dimness. Trunks stand stacked in corners, latched and waiting.',
+
+      '',
+
+      'A small writing table holds an open photo album, a heavy leather trunk, and a brass compass rose half-buried under a pile of older photographs. Whoever stores their past down here has done it tenderly — every box dated, every label still legible.',
+
+    ],
+
+    asciiArt: [
+      '',
+      '    ╔═══════════════════════════════╗',
+      '    ║   ▓▓▓ ▓▓▓ ▓▓▓ ▓▓▓ ▓▓▓ ▓▓▓     ║',
+      '    ║   ░▒▒░░▒▒░░▒▒░░▒▒░░▒▒░         ║',
+      '    ║                                ║',
+      '    ║   ┌──┐  ┌──┐  ┌──┐  ┌──┐       ║',
+      '    ║   │  │  │  │  │  │  │  │       ║',
+      '    ║   └──┘  └──┘  └──┘  └──┘       ║',
+      '    ║                                ║',
+      '    ║   ┌────────────────────┐        ║',
+      '    ║   │  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  │        ║',
+      '    ║   └────────────────────┘        ║',
+      '    ╚════════════════════════════════╝',
+    ],
+
+    exits: {
+
+      up: 'grand_hall',
+
+    },
+
+    exitAliases: {
+
+      up: ['back', 'go back', 'climb up', 'up', 'upstairs', 'leave', 'return', 'hall', 'grand hall'],
+
+    },
+
+    objects: {
+
+      cedar_shelves: {
+        id: 'cedar_shelves',
+        name: 'the cedar-lined shelves',
+        keywords: ['shelves', 'shelf', 'cedar', 'boxes', 'storage'],
+        examineText: 'Each box on the shelves is labeled in the same careful pencil hand: "Santa Cruz, 2008–2012." "Junior Guard, 2010." "Hilltop High Ultimate." "OTO bring-up notes." "Letters to keep." "Lakshmi — ferry tickets, beach photos." It is less a cellar than a memory palace, neatly indexed.',
+      },
+
+      photo_album: {
+        id: 'photo_album',
+        name: 'an open photo album',
+        keywords: ['album', 'photo album', 'photos', 'pictures'],
+        examineText: 'The album is open to a spread of black-and-white photographs: a small boy with a foam surfboard, a pair of teenagers grinning over a frisbee trophy, three friends on a porch at golden hour. A few captions in pencil: "Aidan + me, the year we figured it out." "Lakshmi, Yosemite." "Martin in his element." It is a quiet roll-call of the people who matter.',
+      },
+
+      heavy_trunk: {
+        id: 'heavy_trunk',
+        name: 'a heavy leather trunk',
+        keywords: ['trunk', 'leather trunk', 'chest'],
+        examineText: 'A leather-bound steamer trunk with brass corners. The latch is engraved with the same spiral-and-eye motif you have been seeing throughout the house. It is locked, but the lock looks more decorative than functional. There is a label tied to the handle: "Open when you are ready."',
+      },
+
+    },
+
+    items: {
+
+      family_photo: {
+        id: 'family_photo',
+        keywords: ['photo', 'family photo', 'photograph', 'picture'],
+        takeText: 'You take the family photograph from the top of the loose stack. The paper is creased and warm. You tuck it carefully into your pack.',
+      },
+
+      brass_compass_rose: {
+        id: 'brass_compass_rose',
+        keywords: ['compass rose', 'rose', 'brass compass', 'brass disc', 'disc'],
+        takeText: 'You free the brass compass rose from beneath the photographs. It is heavier than it looks. The needle, though, points toward the stairs — back the way you came.',
+      },
+
+    },
 
     hiddenInteractions: {},
 

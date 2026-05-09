@@ -1,4 +1,58 @@
 const logbooks = {
+  resume_letter: {
+    id: 'resume_letter',
+    title: 'A SEALED LETTER',
+    pages: [
+      {
+        title: 'Cover',
+        body: 'To whom it may find,\n\nIf you are reading this, you found the letter. It was sealed with care, but the seal was always meant to be broken.\n\nWhat follows is a brief account of the writer — Alex Herman, age 21, of San Luis Obispo. Read it the way you might read a note from a friend who is hoping for the chance to work with you.',
+      },
+      {
+        title: 'Who I Am',
+        body: 'I am a hardware engineer studying Computer Engineering at Cal Poly SLO. I grew up in Santa Cruz — nine years as a junior guard, four as a lifeguard. I captained both my high school and college ultimate frisbee teams. I bushwhacked three days through coastal mountains in the rain. I build tree nets, do origami, draw with charcoal, cook well, and collect old things. I love language models. I care about education, community, and protecting the world from the bad guys.',
+      },
+      {
+        title: 'What I Build',
+        body: 'PCBs that run real fields and real classrooms. Custom firmware on RP2040, STM32, and ESP32. Power architectures with multiple domains. AI-assisted code that meets deadlines. A foot mouse for a woman named Sally. A modular motor controller called OTO. An IoT datalogger now headed for strawberry farms. A social media app called Agora that does not have an infinite feed and does not run on ads.',
+      },
+      {
+        title: 'How I Work',
+        body: 'I learn by doing — the Cal Poly motto, but also a personal philosophy. I read the datasheet. I break the board, fix it under a microscope, and write down what went wrong. I treat language models like the most curious collaborator I have ever met. I write clean, clear code. I ship.',
+      },
+      {
+        title: 'What I Want',
+        body: 'I am looking for engineers, founders, and teams who care about the same things I do — building real tools that help real people, and making the world a little less afraid. I want to learn from people who are better than me. I want to ship things that matter. If that sounds like your team, please get in touch.',
+      },
+      {
+        title: 'How To Reach Me',
+        body: 'Email: 1wheelalex@gmail.com\nGitHub: github.com/alexherman11\nLinkedIn: linkedin.com/in/alex-herman04\n\nA full resume travels with this letter — slip it free of the envelope and read at your leisure.\n\n[Download: /pdf/resume.pdf]',
+      },
+    ],
+  },
+
+  visitor_register: {
+    id: 'visitor_register',
+    title: 'VISITORS’ REGISTER',
+    pages: [
+      {
+        title: 'A Note From The Keeper',
+        body: 'If you are reading this, you have found yourself in a strange and welcoming place. Sign your name if you wish. Read the names of those who came before. Each of them stood where you are standing now.',
+      },
+      {
+        title: 'Familiar Names',
+        body: 'Lakshmi G. — "stayed for tea, never left."\nAidan L.W. — "owed me a frisbee. Still does."\nMartin D. — "argued with the portrait. Lost."\nCopernicus — "the chandelier kept rearranging itself, and I am too old for this."',
+      },
+      {
+        title: 'Recent Visitors',
+        body: 'A. Wittgenstein — "the door was the limit of my world."\nA. Lovelace — "borrowed the gear. Will return."\nE. Dijkstra — "go to considered harmful, even here."\nA. Turing — "I left a small mechanical bird in the workshop. Be kind to it."',
+      },
+      {
+        title: 'A Blank Page',
+        body: 'There is a blank line on this page, with the pen still warm beside it. Sign if you wish. The book has space for you.',
+      },
+    ],
+  },
+
   agora: {
     id: 'agora',
     title: 'AGORA',

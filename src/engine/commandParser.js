@@ -45,6 +45,18 @@ export default function parseCommand(raw) {
   let input = raw.trim().toLowerCase()
   if (!input) return null
 
+  // Strip trailing punctuation so "go north?" / "look around." parse cleanly.
+  // Keep the input as-typed for the AI fallback by capturing it before.
+  input = input.replace(/[?!.,;]+$/, '').trim()
+
+  // Strip natural-language preambles so phrases like "I'd like to take X" or
+  // "could you please pick up the journal" route to the local handlers
+  // instead of falling through to the AI.
+  input = input
+    .replace(/^(?:i'd like to|i would like to|i'd really like to|i want to|i wanna|i'd love to|i'm going to|i'm gonna|let me|let's|allow me to|may i|can i|could i|could you|would you|please|just|now|then|first|next|maybe|perhaps|kindly)\s+/, '')
+    .replace(/\s+please$/, '')
+    .trim()
+
   // Strip leading "I" so natural phrasing works: "I go north", "I examine desk"
   input = input.replace(/^i\s+/, '')
 
@@ -83,13 +95,30 @@ export default function parseCommand(raw) {
     return { type: 'go', direction: DIRECTION_ALIASES[input] }
   }
 
-  // "examine [target]" / "look at [target]" / "inspect [target]" / "read [target]" / "x [target]"
-  const examineMatch = input.match(/^(?:examine|look at|inspect|read|x)\s+(.+)/)
-  if (examineMatch) return { type: 'examine', target: examineMatch[1] }
+  // "examine X" / "look at X" / "inspect X" / "read X" / "x X" / "describe X" / "tell me about X" / "study X" / "check X" / "what's X" / "what is X"
+  const examineMatch = input.match(/^(?:examine|look at|look in|look inside|look behind|look under|look beneath|look on|look through|inspect|read|x|describe|study|check|check out|investigate|peer at|peer into|tell me about|what(?:'s| is| are)(?:\s+(?:on|in|inside|behind|under|beneath|atop))?)\s+(.+)/)
+  if (examineMatch) {
+    let target = examineMatch[1].trim()
+    // Strip leading articles for cleaner keyword matching
+    target = target.replace(/^(?:the |a |an )/, '')
+    return { type: 'examine', target, raw: input }
+  }
 
-  // "take [target]" / "get [target]" / "pick up [target]" / "grab [target]"
-  const takeMatch = input.match(/^(?:take|get|pick up|grab)\s+(.+)/)
-  if (takeMatch) return { type: 'take', target: takeMatch[1] }
+  // "take X" / "get X" / "pick up X" / "grab X" / "snag X" / "pocket X" / "collect X" / "lift X" / "snatch X" / "swipe X"
+  const takeMatch = input.match(/^(?:take|get|pick up|pickup|grab|snag|pocket|collect|lift|snatch|swipe|nab|claim|acquire|retrieve|gather|carry off|carry away|steal|fetch)\s+(.+)/)
+  if (takeMatch) {
+    let target = takeMatch[1].trim()
+    target = target.replace(/^(?:the |a |an )/, '')
+    return { type: 'take', target, raw: input }
+  }
+
+  // "drop X" / "discard X" / "put down X" / "leave X"
+  const dropMatch = input.match(/^(?:drop|discard|put down|leave|set down|toss|throw away)\s+(.+)/)
+  if (dropMatch) {
+    let target = dropMatch[1].trim()
+    target = target.replace(/^(?:the |a |an )/, '')
+    return { type: 'drop', target }
+  }
 
   // "use [item] on [target]"
   const useOnMatch = input.match(/^use\s+(.+?)\s+on\s+(.+)/)
@@ -101,7 +130,18 @@ export default function parseCommand(raw) {
 
   // "open [target]" — routes to examine for hidden interactions
   const openMatch = input.match(/^open\s+(.+)/)
-  if (openMatch) return { type: 'examine', target: openMatch[1] }
+  if (openMatch) {
+    let target = openMatch[1].trim().replace(/^(?:the |a |an )/, '')
+    return { type: 'examine', target, raw: input }
+  }
+
+  // Manipulation verbs (pull, push, move, etc.) route to examine so they get
+  // a shot at hidden interactions before falling through to AI.
+  const interactMatch = input.match(/^(?:pull|pull aside|pull back|push|push aside|push back|move|move aside|shake|tap|tap on|press|press on|squeeze|tug|tug at|yank|hit|kick|stomp|stomp on|jiggle|wiggle|rotate|turn|spin|twist|rub|stroke|tap|knock on|click|reach into|reach behind|reach under|feel|feel for|feel under|feel behind|search|search under|search behind|search through|peek|peek under|peek behind|slide|slide aside|nudge|brush aside|part)\s+(.+)/)
+  if (interactMatch) {
+    let target = interactMatch[1].trim().replace(/^(?:the |a |an )/, '')
+    return { type: 'examine', target, raw: input }
+  }
 
   // "whisper [text]"
   const whisperMatch = input.match(/^whisper\s+(.+)/)

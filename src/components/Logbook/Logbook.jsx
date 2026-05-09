@@ -5,29 +5,61 @@ const CONTENT_WIDTH = 56
 const BORDER_WIDTH = CONTENT_WIDTH + 4  // 2 border chars + 2 spaces each side
 
 function wrapText(text, maxWidth) {
-  const words = text.split(' ')
   const lines = []
-  let currentLine = ''
+  // Honor explicit paragraph breaks: split on newlines first, then wrap each segment
+  const paragraphs = text.split(/\r?\n/)
 
-  for (const word of words) {
-    if (currentLine.length === 0) {
-      currentLine = word
-    } else if (currentLine.length + 1 + word.length <= maxWidth) {
-      currentLine += ' ' + word
+  paragraphs.forEach((paragraph, pIdx) => {
+    if (paragraph.length === 0) {
+      lines.push('')
     } else {
-      lines.push(currentLine)
-      currentLine = word
+      const words = paragraph.split(' ').filter(w => w.length > 0)
+      let currentLine = ''
+      for (const word of words) {
+        // Hard-wrap any single word that exceeds the width so it never overflows the border
+        if (word.length > maxWidth) {
+          if (currentLine.length > 0) {
+            lines.push(currentLine)
+            currentLine = ''
+          }
+          for (let i = 0; i < word.length; i += maxWidth) {
+            const chunk = word.slice(i, i + maxWidth)
+            if (chunk.length === maxWidth) lines.push(chunk)
+            else currentLine = chunk
+          }
+          continue
+        }
+        if (currentLine.length === 0) {
+          currentLine = word
+        } else if (currentLine.length + 1 + word.length <= maxWidth) {
+          currentLine += ' ' + word
+        } else {
+          lines.push(currentLine)
+          currentLine = word
+        }
+      }
+      if (currentLine.length > 0) {
+        lines.push(currentLine)
+      }
     }
-  }
-  if (currentLine.length > 0) {
-    lines.push(currentLine)
-  }
+    // Don't add trailing blank for the last paragraph (caller controls spacing)
+    if (pIdx < paragraphs.length - 1 && paragraph.length > 0) {
+      // Newlines in source already produced empty paragraphs; nothing to add here
+    }
+  })
 
   return lines
 }
 
+// Visible length, ignoring control chars that don't render as columns
+function visibleLength(text) {
+  // Strip CR/LF if any leak through (defensive — wrapText should have handled them)
+  return text.replace(/[\r\n]/g, '').length
+}
+
 function padLine(text) {
-  return text + ' '.repeat(Math.max(0, CONTENT_WIDTH - text.length))
+  const cleaned = text.replace(/[\r\n]/g, '')
+  return cleaned + ' '.repeat(Math.max(0, CONTENT_WIDTH - visibleLength(cleaned)))
 }
 
 export default function Logbook({ logbookId, page, onNextPage, onPrevPage, onClose }) {

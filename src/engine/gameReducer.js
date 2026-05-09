@@ -17,6 +17,7 @@ export const ACTIONS = {
   INCREMENT_JAILBREAK_ATTEMPTS: 'INCREMENT_JAILBREAK_ATTEMPTS',
   CREATE_ROOM: 'CREATE_ROOM',
   ADD_GENERATED_ITEM_DEFS: 'ADD_GENERATED_ITEM_DEFS',
+  REVEAL_HIDDEN_EXIT: 'REVEAL_HIDDEN_EXIT',
 }
 
 export default function gameReducer(state, action) {
@@ -152,6 +153,20 @@ export default function gameReducer(state, action) {
         generatedItemDefs: {
           ...state.generatedItemDefs,
           ...action.payload,
+        },
+      }
+    }
+
+    case ACTIONS.REVEAL_HIDDEN_EXIT: {
+      const { fromRoom, direction, toRoom } = action.payload
+      const existing = state.dynamicExits[fromRoom] || {}
+      // Idempotent — ignore if exit already revealed
+      if (existing[direction] === toRoom) return state
+      return {
+        ...state,
+        dynamicExits: {
+          ...state.dynamicExits,
+          [fromRoom]: { ...existing, [direction]: toRoom },
         },
       }
     }

@@ -8,6 +8,9 @@ const ROOM_LABELS = {
   study: 'Study',
   grounds: 'Grounds',
   tree: 'Tree',
+  entrance: 'Entrance',
+  greenhouse: 'Greenhouse',
+  memory_cellar: 'Cellar',
 }
 
 function roomChar(roomId, visitedRooms, currentRoom, generatedRooms) {

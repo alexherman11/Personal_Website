@@ -14,9 +14,18 @@ const OUTDOOR_ROOMS = {
   tree:     { col: 3, row: 1 },
 }
 
+// Secret static rooms map back to a parent on one of the grids so the
+// MiniMap can show a "you are here" indicator near where they branch off.
+const SECRET_PARENTS = {
+  memory_cellar: { parent: 'grand_hall', grid: 'indoor' },
+  greenhouse:    { parent: 'grounds',    grid: 'outdoor' },
+}
+
 export default function MiniMap({ currentRoom, visitedRooms, onClick,
                                    generatedRooms = {}, dynamicExits = {} }) {
+  const secretInfo = SECRET_PARENTS[currentRoom]
   const isOutdoor = ['grounds', 'tree', 'entrance'].includes(currentRoom)
+    || secretInfo?.grid === 'outdoor'
   // If in a generated room, show the indoor grid with a special indicator
   const isGenerated = currentRoom in generatedRooms
   const roomSet = isOutdoor && !isGenerated ? OUTDOOR_ROOMS : INDOOR_ROOMS
@@ -42,6 +51,17 @@ export default function MiniMap({ currentRoom, visitedRooms, onClick,
             style={{ gridColumn: pos.col, gridRow: pos.row }}
           />
         ))}
+        {/* Show a blinking dot when player is in a secret static room */}
+        {secretInfo && (() => {
+          const parentPos = (secretInfo.grid === 'outdoor' ? OUTDOOR_ROOMS : INDOOR_ROOMS)[secretInfo.parent]
+          if (!parentPos) return null
+          return (
+            <div
+              className="mini-map__room mini-map__room--current"
+              style={{ gridColumn: parentPos.col, gridRow: 4 }}
+            />
+          )
+        })()}
         {/* Show a blinking dot when player is in a generated room */}
         {isGenerated && (() => {
           // Walk up to find the seed room parent

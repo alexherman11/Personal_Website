@@ -23,6 +23,9 @@ export default function handleCommand(parsedCommand, gameState) {
     case 'take':
       return handleTake(parsedCommand, room, takenItems, gameState)
 
+    case 'drop':
+      return handleDrop(parsedCommand, gameState)
+
     case 'inventory':
       return { output: [], actions: [{ type: ACTIONS.TOGGLE_PANEL, payload: 'inventory' }] }
 
@@ -222,19 +225,29 @@ function handleExamine(parsedCommand, room, takenItems, gameState) {
     }
   }
 
-  // Check hidden interactions first (target must contain the full keyword)
+  // Check hidden interactions first (target must contain the full keyword,
+  // OR the raw phrase contains every word of a multi-word keyword)
+  const examinePhrase = (parsedCommand.raw || target).toLowerCase()
   for (const interaction of Object.values(room.hiddenInteractions)) {
-    if (interaction.keywords && interaction.keywords.some(kw =>
-      target.includes(kw)
-    )) {
+    if (matchesInteractionKeywords(interaction.keywords, examinePhrase, target)) {
       const actions = []
       if (interaction.flag) {
         if (gameState.flags[interaction.flag.key]) {
-          return { output: ['You\'ve already done that. The effect lingers.'], actions: [] }
+          return { output: splitLines(interaction.repeatText || 'You\'ve already done that. The effect lingers.'), actions: [] }
         }
         actions.push({ type: ACTIONS.SET_FLAG, payload: interaction.flag })
       }
-      return { output: [interaction.responseText], actions }
+      if (interaction.revealsExit) {
+        actions.push({
+          type: ACTIONS.REVEAL_HIDDEN_EXIT,
+          payload: {
+            fromRoom: gameState.currentRoom,
+            direction: interaction.revealsExit.direction,
+            toRoom: interaction.revealsExit.to,
+          },
+        })
+      }
+      return { output: splitLines(interaction.responseText), actions }
     }
   }
 
@@ -267,7 +280,15 @@ function handleExamine(parsedCommand, room, takenItems, gameState) {
       i.name.toLowerCase().includes(target) || i.id.includes(target)
     )
     if (invItem) {
-      return { output: [invItem.description], actions: [] }
+      // If the item has an associated logbook (e.g., the sealed letter contains
+      // a multi-page resume), open it instead of just showing the short description.
+      if (invItem.logbookId) {
+        return {
+          output: [`You unfold the ${invItem.name.toLowerCase()} and begin to read...`],
+          actions: [{ type: ACTIONS.OPEN_LOGBOOK, payload: invItem.logbookId }],
+        }
+      }
+      return { output: splitLines(invItem.description), actions: [] }
     }
   }
 
@@ -296,7 +317,7 @@ function handleExamine(parsedCommand, room, takenItems, gameState) {
   }
 
   if (match.examineText) {
-    return { output: [match.examineText], actions: [] }
+    return { output: splitLines(match.examineText), actions: [] }
   }
 
   return { output: ['You examine it closely, but find nothing remarkable.'], actions: [] }
@@ -304,6 +325,33 @@ function handleExamine(parsedCommand, room, takenItems, gameState) {
 
 function handleTake(parsedCommand, room, takenItems, gameState) {
   const target = parsedCommand.target
+
+  // Hidden interactions get first crack — lets natural verbs like "lift the mat"
+  // or "pull aside the ivy" trigger room secrets even when the verb parsed as a
+  // take. We test against the original raw input so the verb participates.
+  const phrase = (parsedCommand.raw || target).toLowerCase()
+  for (const interaction of Object.values(room.hiddenInteractions)) {
+    if (matchesInteractionKeywords(interaction.keywords, phrase, target)) {
+      const actions = []
+      if (interaction.flag) {
+        if (gameState.flags[interaction.flag.key]) {
+          return { output: splitLines(interaction.repeatText || 'You\'ve already done that. The effect lingers.'), actions: [] }
+        }
+        actions.push({ type: ACTIONS.SET_FLAG, payload: interaction.flag })
+      }
+      if (interaction.revealsExit) {
+        actions.push({
+          type: ACTIONS.REVEAL_HIDDEN_EXIT,
+          payload: {
+            fromRoom: gameState.currentRoom,
+            direction: interaction.revealsExit.direction,
+            toRoom: interaction.revealsExit.to,
+          },
+        })
+      }
+      return { output: splitLines(interaction.responseText), actions }
+    }
+  }
 
   // Check room items (static + generated)
   for (const item of Object.values(room.items)) {
@@ -327,7 +375,23 @@ function handleTake(parsedCommand, room, takenItems, gameState) {
   // Check if it's an object (not an item)
   for (const obj of Object.values(room.objects)) {
     if (matchesKeyword(obj.keywords, target)) {
-      return { output: ['That\'s not something you can take.'], actions: [] }
+      // If the object is a logbook, treat "take/pick up" as "read" — open the logbook
+      if (obj.logbookId) {
+        const actions = [{ type: ACTIONS.OPEN_LOGBOOK, payload: obj.logbookId }]
+        if (obj.logbookId === 'tree_journal') {
+          actions.push({ type: ACTIONS.SET_FLAG, payload: { key: 'read_tree_journal', value: true } })
+        }
+        return {
+          output: ['You lift the volume and begin to read...'],
+          actions,
+        }
+      }
+      // Otherwise it's a fixed feature — suggest examining instead
+      const noun = obj.name?.replace(/^(?:the |an? )/i, '') || 'it'
+      return {
+        output: [`You can't pick up the ${noun} — it's part of the room. Try "examine ${noun}" instead.`],
+        actions: [],
+      }
     }
   }
 
@@ -344,6 +408,20 @@ function handleTake(parsedCommand, room, takenItems, gameState) {
     output: [],
     actions: [],
     aiRequest: { message: `[The visitor attempts to take: "${target}"]` },
+  }
+}
+
+function handleDrop(parsedCommand, gameState) {
+  const target = parsedCommand.target
+  const invItem = gameState.inventory.find(i =>
+    i.name.toLowerCase().includes(target) || i.id.includes(target)
+  )
+  if (!invItem) {
+    return { output: ['You\'re not carrying that.'], actions: [] }
+  }
+  return {
+    output: [`You set the ${invItem.name.toLowerCase()} down. It rests there, waiting, as though it had been expecting this all along.`],
+    actions: [{ type: ACTIONS.REMOVE_ITEM, payload: invItem.id }],
   }
 }
 
@@ -578,11 +656,21 @@ function handleHiddenInteraction(interactionKey, room, gameState) {
   const actions = []
   if (interaction.flag) {
     if (gameState.flags[interaction.flag.key]) {
-      return { output: ['You\'ve already done that. The effect lingers.'], actions: [] }
+      return { output: splitLines(interaction.repeatText || 'You\'ve already done that. The effect lingers.'), actions: [] }
     }
     actions.push({ type: ACTIONS.SET_FLAG, payload: interaction.flag })
   }
-  return { output: [interaction.responseText], actions }
+  if (interaction.revealsExit) {
+    actions.push({
+      type: ACTIONS.REVEAL_HIDDEN_EXIT,
+      payload: {
+        fromRoom: gameState.currentRoom,
+        direction: interaction.revealsExit.direction,
+        toRoom: interaction.revealsExit.to,
+      },
+    })
+  }
+  return { output: splitLines(interaction.responseText), actions }
 }
 
 function handleWhisper(parsedCommand, room) {
@@ -800,6 +888,33 @@ function tryShellCommand(rawInput, gameState) {
 
 // --- Helpers ---
 
+// Split a string on newlines so descriptions and examine texts that contain
+// `\n` render as multi-line output in the terminal. Single-line strings pass
+// through unchanged.
+function splitLines(text) {
+  if (typeof text !== 'string') return [text]
+  if (!text.includes('\n')) return [text]
+  return text.split(/\r?\n/)
+}
+
+// Match a hidden interaction's keywords against either the raw phrase the
+// player typed or the parsed target. A multi-word keyword matches if every one
+// of its words appears in either string — this keeps phrasing forgiving
+// ("lift the welcome mat" matches "lift mat") while still requiring an action
+// signal so plain "examine welcome mat" doesn't accidentally trigger it.
+function matchesInteractionKeywords(keywords, phrase, target) {
+  if (!keywords) return false
+  const phraseLower = (phrase || '').toLowerCase()
+  const targetLower = (target || '').toLowerCase()
+  return keywords.some(kw => {
+    const k = kw.toLowerCase()
+    if (phraseLower.includes(k) || targetLower.includes(k)) return true
+    const parts = k.split(/\s+/).filter(Boolean)
+    if (parts.length < 2) return false
+    return parts.every(p => phraseLower.includes(p))
+  })
+}
+
 function matchesKeyword(keywords, target) {
   const t = target.toLowerCase()
   return keywords.some(kw => t.includes(kw) || kw.includes(t))
@@ -820,9 +935,12 @@ function formatExits(room, gameState) {
     }
   }
 
-  // Add named exits from aliases
+  // Add named exits from aliases — but skip keys that are also cardinal
+  // directions (already shown above as "North", "Up", etc.) so the player
+  // doesn't see "Up, The Grand Hall" for a single staircase.
   if (room.exitAliases) {
     for (const exitKey of Object.keys(room.exitAliases)) {
+      if (directionNames[exitKey]) continue
       const targetRoom = getRoom(mergedExits[exitKey], gameState)
       if (targetRoom) {
         exitLabels.push(targetRoom.name)
