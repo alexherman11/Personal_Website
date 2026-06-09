@@ -7,6 +7,13 @@ import path from 'path'
 import chatRoute from './routes/chat.js'
 import flyerSubmit from './routes/flyer.js'
 import { privatePage, privateJson, privateCsv } from './routes/private.js'
+import {
+  foremanConfig,
+  foremanSubmit,
+  foremanList,
+  foremanDemo,
+  foremanDecide,
+} from './routes/foreman.js'
 import { basicAuth } from './auth/basicAuth.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -57,6 +64,11 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }))
 app.get('/private', privateLimiter, basicAuth, privatePage)
 app.get('/private/data.json', privateLimiter, basicAuth, privateJson)
 app.get('/private/data.csv', privateLimiter, basicAuth, privateCsv)
+app.get('/private/foreman/config', privateLimiter, basicAuth, foremanConfig)
+app.post('/private/foreman/submit', privateLimiter, basicAuth, foremanSubmit)
+app.post('/private/foreman/list', privateLimiter, basicAuth, foremanList)
+app.get('/private/foreman/demo/:missionId', privateLimiter, basicAuth, foremanDemo)
+app.post('/private/foreman/decide', privateLimiter, basicAuth, foremanDecide)
 
 // Serve built frontend in production
 const distPath = path.join(__dirname, '..', 'dist')
