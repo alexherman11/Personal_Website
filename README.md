@@ -181,7 +181,7 @@ the-depths/
 │      │         ├── roomContext (state serialization)      │
 │      │         └── responseFormat (JSON schema)          │
 │      │                                                   │
-│      ├──→ Anthropic API (claude-sonnet-4-20250514)       │
+│      ├──→ Anthropic API (claude-sonnet-4-6)              │
 │      │                                                   │
 │      └──→ Parse + validate JSON response                │
 │               │                                          │
@@ -428,7 +428,7 @@ The `AmbientManager` handles crossfading: when the player moves rooms, the old a
 6. Returns `{ narrative, stateChanges, jailbreakSuccess }` to frontend
 7. Frontend displays narrative via typewriter, dispatches any state changes
 
-**AI model:** `claude-sonnet-4-20250514` with `max_tokens: 400`.
+**AI model:** `claude-sonnet-4-6` with `max_tokens: 400`.
 
 **Conversation history:** Maintained in frontend state, capped at 20 messages (FIFO). Cleared when the player navigates to a new room. Sent with each request so the AI has conversational context.
 
