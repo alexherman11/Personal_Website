@@ -69,7 +69,7 @@ Built with React + Vite on the frontend and Express + WebSockets + a QuickJS san
 | Backend | Express 5, Node 20+ |
 | World store | In-memory objects, JSON journal + snapshots (no database server) |
 | Scripting | QuickJS (WASM) via `quickjs-emscripten-core` — sandboxed JavaScript verbs |
-| Narrator | Anthropic SDK → Claude (`claude-sonnet-5`), or a local `claude` CLI in print mode |
+| Narrator | Anthropic SDK → Claude Sonnet 5.5 (`claude-sonnet-5-5`, server-side refusal fallbacks, medium effort), or a local `claude` CLI in print mode |
 
 ---
 
@@ -238,7 +238,7 @@ Anything the engine doesn't understand goes to the narrator (`server/world/narra
 
 Prompt modes: entrance (the door; `<<DOOR_OPENS>>` marker opens it; hints begin after 6 attempts), standard (per-room Alex content from `server/prompts/alexContent.js`, or generic content for built rooms), and vault (`server/prompts/vaultPrompt.js`: the narrator may say it is Claude, discuss Conscious Claude, and grant the bit with `<<GRANT_BIT>>`).
 
-Transport: `server/auth/claudeAuth.js` tries `ANTHROPIC_API_KEY`, then `~/.claude/.credentials.json`, then the local `claude` CLI (`server/auth/claudeCli.js`, which replays the same system prompt and conversation through `claude -p`). `NARRATOR_BACKEND=claude-cli` forces the CLI; `NARRATOR_MODEL` overrides the model.
+Transport: `server/auth/claudeAuth.js` tries `ANTHROPIC_API_KEY`, then `~/.claude/.credentials.json`, then the local `claude` CLI (`server/auth/claudeCli.js`, which replays the same system prompt and conversation through `claude -p`). `NARRATOR_BACKEND=claude-cli` forces the CLI; `NARRATOR_MODEL` and `NARRATOR_EFFORT` override the model and effort.
 
 ---
 

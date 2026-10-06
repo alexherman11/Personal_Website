@@ -16,7 +16,8 @@ import { openDoor } from './entrance.js'
 import { grantProgrammer } from './vault.js'
 import { verbUsage } from './commands/basic.js'
 
-const MODEL = process.env.NARRATOR_MODEL || 'claude-sonnet-5'
+const MODEL = process.env.NARRATOR_MODEL || 'claude-sonnet-5-5'
+const EFFORT = process.env.NARRATOR_EFFORT || 'medium'
 const RATE = { perMinute: 14 }
 
 const responseFormat = `
@@ -159,7 +160,13 @@ export async function narrate(ctx, opts = {}) {
     const userMsg = intentMessage(ctx, opts)
     const messages = [...session.history.slice(-12), { role: 'user', content: userMsg }]
     const client = await getClient()
-    const response = await client.messages.create({ model: MODEL, max_tokens: 700, system, messages })
+    // Beta messages endpoint: server-side refusal fallbacks ("default" routes by
+    // category) and an effort level tuned for short in-character narration.
+    const response = await client.beta.messages.create({
+      model: MODEL, max_tokens: 700, system, messages,
+      betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
+      output_config: { effort: EFFORT },
+    })
     // Current models return a thinking block first; the narration is the text blocks.
     let raw = (response.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim()
     raw = raw.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()

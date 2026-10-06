@@ -14,7 +14,7 @@
     "start": "node server/index.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@anthropic-ai/sdk": "^0.131.0",
     "@jitl/quickjs-wasmfile-release-sync": "^0.32.0",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",

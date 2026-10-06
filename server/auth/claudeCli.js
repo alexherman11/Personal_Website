@@ -83,18 +83,17 @@ function runCli({ model, system, prompt }) {
 }
 
 export function createCliClient() {
-  return {
-    backend: 'claude-cli',
-    messages: {
-      async create({ model, system, messages }) {
-        const prompt = flattenMessages(messages)
-        const result = await runCli({ model, system, prompt })
-        return {
-          content: [{ type: 'text', text: result.result || '' }],
-          usage: result.usage,
-          model,
-        }
-      },
+  const messages = {
+    // Extra API-only params (betas, fallbacks, output_config) are ignored here.
+    async create({ model, system, messages }) {
+      const prompt = flattenMessages(messages)
+      const result = await runCli({ model, system, prompt })
+      return {
+        content: [{ type: 'text', text: result.result || '' }],
+        usage: result.usage,
+        model,
+      }
     },
   }
+  return { backend: 'claude-cli', messages, beta: { messages } }
 }
