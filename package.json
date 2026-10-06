@@ -15,15 +15,17 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
-    "@fal-ai/client": "^1.9.4",
+    "@jitl/quickjs-wasmfile-release-sync": "^0.32.0",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
     "express": "^5.1.0",
     "express-rate-limit": "^7.5.0",
+    "quickjs-emscripten-core": "^0.32.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "sharp": "^0.34.5",
-    "tone": "^15.1.22"
+    "tone": "^15.1.22",
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.4.1",

@@ -1,4 +1,3 @@
-import logbooks from '../../data/logbooks'
 import './Logbook.css'
 
 const CONTENT_WIDTH = 56
@@ -30,9 +29,9 @@ function padLine(text) {
   return text + ' '.repeat(Math.max(0, CONTENT_WIDTH - text.length))
 }
 
-export default function Logbook({ logbookId, page, onNextPage, onPrevPage, onClose }) {
-  const logbook = logbooks[logbookId]
-  if (!logbook) return null
+export default function Logbook({ book, page, onNextPage, onPrevPage, onClose }) {
+  const logbook = book
+  if (!logbook || !logbook.pages?.length) return null
 
   const totalPages = logbook.pages.length
   const clampedPage = Math.max(0, Math.min(page, totalPages - 1))
@@ -55,8 +54,7 @@ export default function Logbook({ logbookId, page, onNextPage, onPrevPage, onClo
   bodyLines.push('')
 
   // Page body — wrap to content width
-  const wrapped = wrapText(currentPage.body, CONTENT_WIDTH)
-  bodyLines.push(...wrapped)
+  for (const para of String(currentPage.body).split('\n')) bodyLines.push(...(para ? wrapText(para, CONTENT_WIDTH) : ['']))
 
   // Navigation footer
   const prevHint = clampedPage > 0 ? '\u2190 prev' : '      '

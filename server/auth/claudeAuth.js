@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import Anthropic from '@anthropic-ai/sdk'
+import { createCliClient } from './claudeCli.js'
 
 const CREDENTIALS_PATH = join(homedir(), '.claude', '.credentials.json')
 const CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e'
@@ -42,6 +43,14 @@ function getApiKeyClient() {
 export async function getClient() {
   // Return cached client if token is still valid
   if (cachedClient && Date.now() < cachedExpiresAt - EXPIRY_BUFFER_MS) {
+    return cachedClient
+  }
+
+  // Explicit opt-in to the local `claude` CLI as the narrator transport
+  if (process.env.NARRATOR_BACKEND === 'claude-cli') {
+    console.log('Narrator backend: local claude CLI')
+    cachedClient = createCliClient()
+    cachedExpiresAt = Number.MAX_SAFE_INTEGER
     return cachedClient
   }
 
@@ -89,6 +98,14 @@ export async function getClient() {
     }
   } catch (err) {
     console.warn('OAuth auth failed:', err.message)
+  }
+
+  // Last resort: a local `claude` CLI, if one is installed
+  if (process.env.NARRATOR_BACKEND !== 'api') {
+    console.log('No API key or OAuth credentials; falling back to the local claude CLI')
+    cachedClient = createCliClient()
+    cachedExpiresAt = Number.MAX_SAFE_INTEGER
+    return cachedClient
   }
 
   throw new Error('No valid auth: no ANTHROPIC_API_KEY in environment and OAuth refresh failed')

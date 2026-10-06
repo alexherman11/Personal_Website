@@ -141,3 +141,33 @@
   opacity: 0;
   transform: translateY(-3px);
 }
+
+.terminal-line--narrator {
+  color: var(--color-primary);
+}
+
+.terminal-line--chat {
+  color: #ffd978;
+}
+
+.terminal-line--emote {
+  color: #d9b35a;
+  font-style: italic;
+}
+
+.terminal-line--error {
+  color: #e0875a;
+}
+
+.terminal-thinking {
+  letter-spacing: 4px;
+  animation: blink 1.2s step-end infinite;
+}
+
+.terminal-status {
+  margin-left: 12px;
+  font-size: 11px;
+  color: var(--color-dim);
+  user-select: none;
+  white-space: nowrap;
+}

@@ -4,7 +4,9 @@ import cors from 'cors'
 import rateLimit from 'express-rate-limit'
 import { fileURLToPath } from 'url'
 import path from 'path'
-import chatRoute from './routes/chat.js'
+import http from 'http'
+import { bootWorld, attachWebSocket } from './world/index.js'
+import { mailPage, mailJson } from './routes/mailAdmin.js'
 import flyerSubmit from './routes/flyer.js'
 import { privatePage, privateJson, privateCsv } from './routes/private.js'
 import {
@@ -55,13 +57,14 @@ const privateLimiter = rateLimit({
   message: 'Too many requests.',
 })
 
-app.post('/api/chat', chatRoute)
 app.post('/api/flyer/submit', flyerLimiter, flyerSubmit)
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }))
 
 // Private admin routes — basic auth + rate limit, mounted BEFORE the SPA
 // catch-all so they intercept first.
 app.get('/private', privateLimiter, basicAuth, privatePage)
+app.get('/private/mail', privateLimiter, basicAuth, mailPage)
+app.get('/private/mail.json', privateLimiter, basicAuth, mailJson)
 app.get('/private/data.json', privateLimiter, basicAuth, privateJson)
 app.get('/private/data.csv', privateLimiter, basicAuth, privateCsv)
 app.get('/private/foreman/config', privateLimiter, basicAuth, foremanConfig)
@@ -82,6 +85,13 @@ app.get('{*path}', (req, res) => {
 })
 
 const PORT = process.env.PORT || 3002
-app.listen(PORT, () => {
-  console.log(`The Depths server running on port ${PORT}`)
+const server = http.createServer(app)
+attachWebSocket(server)
+bootWorld().then(() => {
+  server.listen(PORT, () => {
+    console.log(`The Depths server running on port ${PORT}`)
+  })
+}).catch(err => {
+  console.error('World failed to boot:', err)
+  process.exit(1)
 })

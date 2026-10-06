@@ -10,7 +10,7 @@ function generateStaticLine(width = 55) {
   ).join('')
 }
 
-const Terminal = forwardRef(function Terminal({ onCommand, disabled: externalDisabled }, ref) {
+const Terminal = forwardRef(function Terminal({ onCommand, disabled: externalDisabled, prompt = '>', thinking = false, status = '' }, ref) {
   const [lines, setLines] = useState([])
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -217,7 +217,8 @@ const Terminal = forwardRef(function Terminal({ onCommand, disabled: externalDis
       const command = inputValue.trim()
       if (command) {
         pushHistory(command)
-        commitLine(command, 'input')
+        if (prompt === '>') commitLine(command, 'input')
+        else commitLine(`${prompt} ${command}`, 'dim')
         if (onCommand) onCommand(command)
       }
       setInputValue('')
@@ -305,11 +306,14 @@ const Terminal = forwardRef(function Terminal({ onCommand, disabled: externalDis
               <span className="terminal-cursor">_</span>
             </div>
           )}
+          {thinking && currentlyTypingText === null && (
+            <div className="terminal-line terminal-line--dim terminal-thinking">. . .</div>
+          )}
         </div>
       )}
       {!transitionActive && (
         <div className="terminal-input-line">
-          <span className="terminal-prompt">&gt;&nbsp;</span>
+          <span className="terminal-prompt">{prompt}&nbsp;</span>
           <input
             ref={inputRef}
             type="text"
@@ -321,6 +325,7 @@ const Terminal = forwardRef(function Terminal({ onCommand, disabled: externalDis
             spellCheck={false}
             autoComplete="off"
           />
+          {status && <span className="terminal-status">{status}</span>}
         </div>
       )}
     </div>

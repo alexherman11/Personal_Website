@@ -83,7 +83,7 @@ const rooms = {
 
         keywords: ['mat', 'welcome', 'welcome mat', 'rug'],
 
-        examineText: 'The mat is worn but beatiful. It appears to be handwoven, from some ancient time before machines. You wonder at the strange patterns woven into it. Some appear to be some arcane script but it means nothing to you.',
+        examineText: 'The mat is worn but beautiful. It appears to be handwoven, from some ancient time before machines. You wonder at the strange patterns woven into it. Some appear to be some arcane script but it means nothing to you.',
 
       },
 
