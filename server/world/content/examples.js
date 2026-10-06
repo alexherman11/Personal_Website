@@ -221,12 +221,14 @@ tell(player, "Over the rim of the basket: " + roomOf(this).name + ".")
   upsert({
     id: '#monster', kind: 'thing', name: 'training dummy', aliases: ['dummy', 'monster', 'training dummy'], parent: '#thing', owner: WIZARD_ID, location: '#annex',
     description: 'A straw-stuffed training dummy with a painted scowl. A small slate hangs from its neck: HP 20. (attack dummy)',
-    props: { hp: 20, maxhp: 20, fighters: {}, help: 'attack dummy. Hit points live on the dummy; each fighter\'s score lives in dummy.fighters[player.id]. When it falls it respawns in a minute via fork(). Copy it to build a whole dungeon.' },
+    props: { hp: 20, maxhp: 20, maxdmg: 6, fighters: {}, alive_desc: 'A straw-stuffed training dummy with a painted scowl. A small slate hangs from its neck.', dead_desc: 'A heap of straw and sacking where a training dummy used to stand. It will be back.', death_msg: 'The training dummy bursts in a cloud of straw!', respawn_msg: 'Straw rustles and gathers itself: the training dummy stands again.', respawn_seconds: 60, help: 'attack dummy. Hit points live on the dummy; each fighter\'s score lives in dummy.fighters[player.id]. Copies can be re-skinned without code: @set troll.maxhp to 50, @set troll.death_msg to "...", @set troll.alive_desc to "...". When it falls it respawns via fork().' },
     perms: { r: true, w: false, f: true }, flags: { takeable: false, fixture: true },
     verbs: {
       attack: V(['attack', 'hit', 'fight', 'kick', 'punch'], ['this', 'none', 'none'], `
+// Messages are properties, so a copy can be re-skinned with @set instead of code:
+//   @set troll.death_msg to "The troll topples with a roar!"
 if ((this.hp || 0) <= 0) { tell(player, cap("the " + name(this)) + " is in pieces on the floor. Give it a minute."); return }
-const dmg = random(1, 6)
+const dmg = random(1, this.maxdmg || 6)
 this.hp = Math.max(0, this.hp - dmg)
 const fighters = this.fighters || {}
 fighters[player.id] = (fighters[player.id] || 0) + dmg
@@ -234,18 +236,18 @@ this.fighters = fighters
 tell(player, "You strike the " + name(this) + " for " + dmg + ". It has " + this.hp + " HP left.")
 announce(player.name + " strikes the " + name(this) + " for " + dmg + ".")
 if (this.hp === 0) {
-  announceAll(cap("the " + name(this)) + " bursts in a cloud of straw! " + player.name + " lands the final blow (" + fighters[player.id] + " damage in all).")
-  this.description = "A heap of straw and sacking where a training dummy used to stand. It will be back."
-  fork(60, "respawn")
+  announceAll((this.death_msg || cap("the " + name(this)) + " bursts in a cloud of straw!") + " " + player.name + " lands the final blow (" + fighters[player.id] + " damage in all).")
+  this.description = this.dead_desc || ("A heap where " + name(this) + " used to stand. It will be back.")
+  fork(this.respawn_seconds || 60, "respawn")
 } else {
-  this.description = "A straw-stuffed training dummy with a painted scowl. A small slate hangs from its neck: HP " + this.hp + ". (attack dummy)"
+  this.description = (this.alive_desc || ("A " + name(this) + " with a painted scowl.")) + " HP " + this.hp + "/" + (this.maxhp || 20) + ". (attack " + (this.aliases[0] || name(this)) + ")"
 }
 `),
       respawn: V('respawn', ['this', 'none', 'this'], `
 this.hp = this.maxhp || 20
 this.fighters = {}
-this.description = "A straw-stuffed training dummy with a painted scowl. A small slate hangs from its neck: HP " + this.hp + ". (attack dummy)"
-announce("Straw rustles and gathers itself: the training dummy stands again.", { all: true })
+this.description = (this.alive_desc || ("A " + name(this) + " with a painted scowl.")) + " HP " + this.hp + "/" + (this.maxhp || 20) + ". (attack " + (this.aliases[0] || name(this)) + ")"
+announce(this.respawn_msg || ("Something rustles and gathers itself: " + name(this) + " stands again."), { all: true })
 `, { hidden: true }),
     },
   })

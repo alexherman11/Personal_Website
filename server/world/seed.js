@@ -53,7 +53,9 @@ export function seedWorld() {
 
   // ---- system + wizard ----
   upsert({ id: SYSTEM_ID, kind: 'generic', name: 'The Depths', aliases: ['system'], owner: WIZARD_ID, description: 'The world itself.', perms: { r: true } })
-  if (!store.get(WIZARD_ID)) {
+  const wiz = store.get(WIZARD_ID)
+  if (wiz && !wiz.props.phase) { wiz.props.phase = 'playing'; wiz.props.flags = { ...(wiz.props.flags || {}), door_opened: true }; store.save(wiz) }
+  if (!wiz) {
     store.create({ id: WIZARD_ID, kind: 'player', name: 'Alex', aliases: ['alex herman', 'wizard'], parent: '#player', owner: WIZARD_ID,
       location: '#grand_hall', description: 'Alex Herman — the builder of this place. He looks like someone who has spent a lot of time outside.',
       props: { gender: 'he', home: '#grand_hall', quota: 1000000, flags: { door_opened: true }, registered: true, phase: 'playing', visited: ['#grand_hall'] },

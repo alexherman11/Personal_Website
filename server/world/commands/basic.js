@@ -46,15 +46,7 @@ export async function examine(ctx, targetRaw, { reading = false } = {}) {
   const target = String(targetRaw || '').trim().toLowerCase()
   if (!target) return ctx.tell('Examine what? Name something in the room or in your pack.', 'error')
 
-  // Seed hidden interactions on the room (keywords inside the phrase)
-  const hidden = store.prop(room, 'hidden') || {}
-  for (const [key, hi] of Object.entries(hidden)) {
-    if (!hi.keywords?.some(kw => target.includes(kw))) continue
-    if (key === 'listen') continue // sense-triggered, not examine-triggered
-    if (hi.flag && playerFlag(player, hi.flag.key)) return ctx.tell(hi.responseText ? hi.responseText : "You've already done that. The effect lingers.")
-    if (hi.flag) setPlayerFlag(player, hi.flag.key, hi.flag.value ?? true)
-    return ctx.tell(hi.responseText)
-  }
+  if (tryHidden(ctx, target)) return
   if (await entranceHooks.examine?.(ctx, target)) return
   if (await vaultHooks.examine?.(ctx, target)) return
 
@@ -78,9 +70,10 @@ export async function examine(ctx, targetRaw, { reading = false } = {}) {
   // Notes: readable text
   const noteText = store.prop(obj, 'text')
   if (Array.isArray(noteText) && (reading || store.isDescendantOf(obj, '#note') || obj.id === '#note')) {
-    const lines = store.describe(obj)
-    if (noteText.length === 0) return ctx.tell([...lines, '', `${capitalize(theName(obj))} is blank. (write <text> on ${obj.name.toLowerCase()})`])
-    return ctx.tell([...lines, '', ...noteText])
+    const lines = store.describe(obj).filter(Boolean)
+    if (lines.length) lines.push('')
+    if (noteText.length === 0) return ctx.tell([...lines, `${capitalize(theName(obj))} is blank. (write <text> on ${obj.name.toLowerCase()})`])
+    return ctx.tell([...lines, ...noteText])
   }
   if (obj.kind === 'player') return describePlayer(ctx, obj)
   if (obj.kind === 'exit') {
@@ -111,6 +104,22 @@ export async function examine(ctx, targetRaw, { reading = false } = {}) {
   ctx.tell(lines)
 }
 
+// Seed rooms' hidden interactions: phrases like "under workbench" or "bottom drawer"
+// answered from the room data, whatever verb the player used.
+export function tryHidden(ctx, phrase) {
+  const { player, room } = ctx
+  const target = ' ' + String(phrase || '').toLowerCase().replace(/\b(the|a|an|some|this|that)\b/g, ' ').replace(/\s+/g, ' ').trim() + ' '
+  const hidden = store.prop(room, 'hidden') || {}
+  for (const [key, hi] of Object.entries(hidden)) {
+    if (key === 'listen') continue // sense-triggered
+    if (!hi.keywords?.some(kw => target.includes(' ' + String(kw).toLowerCase().replace(/\b(the|a|an)\b/g, ' ').replace(/\s+/g, ' ').trim() + ' '))) continue
+    if (hi.flag && !playerFlag(player, hi.flag.key)) setPlayerFlag(player, hi.flag.key, hi.flag.value ?? true)
+    ctx.tell(hi.responseText)
+    return true
+  }
+  return false
+}
+
 export function verbUsage(v, obj) {
   const name = (v.names?.[0] || v.key).replace('*', '')
   const [d, p, i] = v.args || ['none', 'none', 'none']
@@ -136,6 +145,7 @@ function describePlayer(ctx, p) {
 }
 
 async function lookIn(ctx, ref) {
+  if (tryHidden(ctx, ref)) return
   const res = ctx.resolve(ref)
   if (!res.obj) return ctx.noSuch(ref, res)
   const obj = res.obj
@@ -165,7 +175,7 @@ registerCommand({
 })
 
 registerCommand({
-  name: 'exits', aliases: ['where'], usage: 'exits', category: 'basics',
+  name: 'exits', aliases: [], usage: 'exits', category: 'basics',
   summary: 'List the ways out of this room.',
   async handler(ctx) {
     const exits = exitsFor(ctx.room, ctx.player)
@@ -227,6 +237,7 @@ registerCommand({
     if (!ref) return ctx.tell('Take what?', 'error')
     if (await vaultHooks.take?.(ctx, ref)) return
     if (await entranceHooks.take?.(ctx, ref)) return
+    if (tryHidden(ctx, ref)) return
     if (ctx.prepstr === 'from' || ctx.prepstr === 'out of' || ctx.prepstr === 'from inside') return takeFrom(ctx, ref, ctx.iobjstr)
     const room = ctx.room
     const candidates = visibleIn(room.id, ctx.player).filter(o => o.kind !== 'player')
@@ -267,7 +278,7 @@ registerCommand({
   async handler(ctx) {
     const ref = ctx.argstr
     if (!ref) return ctx.tell('Drop what?', 'error')
-    const { best, matches } = objectsApi.matchObjects(ref, store.contents(ctx.player.id))
+    const { best, matches } = objectsApi.matchObjects(ref, store.contents(ctx.player.id), ctx.player.id)
     if (!best) return ctx.tell(matches.length > 1 ? `Which do you mean: ${matches.map(m => m.name).join(' or ')}?` : "You aren't carrying that.", 'error')
     const r = dropObject(ctx.player, best)
     ctx.tell(r.msg, r.ok ? 'output' : 'error')
@@ -280,7 +291,8 @@ registerCommand({
   async handler(ctx) {
     if (!ctx.prepstr) return ctx.tell('Put what where? e.g. "put rock in box"', 'error')
     if (await vaultHooks.put?.(ctx, ctx.dobjstr, ctx.iobjstr)) return
-    const { best, matches } = objectsApi.matchObjects(ctx.dobjstr, store.contents(ctx.player.id))
+    if (tryHidden(ctx, ctx.argstr)) return
+    const { best, matches } = objectsApi.matchObjects(ctx.dobjstr, store.contents(ctx.player.id), ctx.player.id)
     if (!best) return ctx.tell(matches.length > 1 ? `Which do you mean: ${matches.map(m => m.name).join(' or ')}?` : `You aren't carrying "${ctx.dobjstr}".`, 'error')
     const cres = ctx.resolve(ctx.iobjstr)
     if (!cres.obj) return ctx.noSuch(ctx.iobjstr, cres)
@@ -312,6 +324,7 @@ registerCommand({
 async function openClose(ctx, open) {
   const ref = ctx.argstr
   if (!ref) return ctx.tell(`${open ? 'Open' : 'Close'} what?`, 'error')
+  if (tryHidden(ctx, ref)) return
   if (open && await entranceHooks.open?.(ctx, ref)) return
   const res = ctx.resolve(ref)
   if (!res.obj) return narrate(ctx, { intent: open ? 'open' : 'close', target: ref })
@@ -354,9 +367,10 @@ registerCommand({
     const itemRef = ctx.dobjstr
     const targetRef = ctx.iobjstr
     if (!itemRef) return ctx.tell('Use what?', 'error')
-    const { best: item, matches } = objectsApi.matchObjects(itemRef, store.contents(ctx.player.id))
+    const { best: item, matches } = objectsApi.matchObjects(itemRef, store.contents(ctx.player.id), ctx.player.id)
     if (!item) {
       if (matches.length > 1) return ctx.tell(`Which do you mean: ${matches.map(m => m.name).join(' or ')}?`, 'error')
+      if (tryHidden(ctx, ctx.argstr)) return
       const here = resolveRef(ctx.player, itemRef, { includeExits: false })
       if (here.obj && here.obj.location !== ctx.player.id) return narrate(ctx, { intent: 'use', target: ctx.argstr })
       return ctx.tell(`You don't have "${itemRef}". Check your inventory ("i").`, 'error')

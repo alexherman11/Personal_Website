@@ -89,6 +89,8 @@ export function parse(rawLine) {
 export function canonicalDirection(word) {
   if (!word) return null
   const w = word.toLowerCase().replace(/ward(s)?$/, '')
+  if (w === 'upstairs') return 'up'
+  if (w === 'downstairs') return 'down'
   return DIRECTIONS[w] || null
 }
 

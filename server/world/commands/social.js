@@ -49,7 +49,7 @@ registerCommand({
 })
 
 registerCommand({
-  name: 'whisper', aliases: ['tell'], usage: 'whisper <message> to <player>', category: 'social', protected: true,
+  name: 'whisper', aliases: [], usage: 'whisper <message> to <player>', category: 'social', protected: true,
   summary: 'Whisper to someone in the same room. Others see only that you whispered.',
   async handler(ctx) {
     let text, who

@@ -97,23 +97,37 @@ export function makeContext(session, parsed) {
 export function matchExit(player, raw) {
   const room = roomOf(player)
   if (!room) return null
-  const input = String(raw).toLowerCase().trim().replace(/^(go|walk|head|move|run|travel|climb|step|proceed)\s+(to\s+|toward\s+|towards\s+|through\s+|into\s+)?(the\s+)?/, '')
-  const dir = canonicalDirection(input)
+  const input = String(raw).toLowerCase().trim()
+    .replace(/^(go|walk|head|move|run|travel|climb|step|proceed|enter)\s+(to\s+|toward\s+|towards\s+|through\s+|into\s+|in\s+)?(the\s+)?/, '')
+    .replace(/\s+(door|doorway|passage|exit|way|path|stairs|staircase)$/, m => m)
   const exits = exitsFor(room, player)
-  for (const ex of exits) {
-    const names = [ex.name, ex.props?.direction, ...(ex.aliases || [])].filter(Boolean).map(s => String(s).toLowerCase())
-    if (dir && names.includes(dir)) return ex
-    if (names.includes(input)) return ex
+  const namesOf = ex => [ex.name, ex.props?.direction, ...(ex.aliases || [])].filter(Boolean).map(s => String(s).toLowerCase())
+  // 1. the whole input is an exit name or alias ("north", "tree", "go to the door" -> "door")
+  for (const ex of exits) if (namesOf(ex).includes(input)) return ex
+  // 2. a direction word anywhere in the input ("north door", "the eastern doorway", "upstairs")
+  const words = input.replace(/(ern|erly)\b/g, '').split(/\s+/)
+  for (const w of words) {
+    const dir = canonicalDirection(w)
+    if (!dir) continue
+    for (const ex of exits) if (namesOf(ex).includes(dir)) return ex
   }
-  // the destination's name
+  // 3. the destination's name, alone or at the end ("explore the grounds")
+  const tail = input.replace(/^the\s+/, '')
   for (const ex of exits) {
     const dest = store.get(ex.props?.dest)
-    if (dest && dest.name.toLowerCase().replace(/^the\s+/, '') === input.replace(/^the\s+/, '')) return ex
+    if (!dest) continue
+    const dn = dest.name.toLowerCase().replace(/^the\s+/, '')
+    if (dn === tail || tail.endsWith(' ' + dn) || tail.endsWith(' the ' + dn)) return ex
   }
-  // alias phrases contained in the input, as whole words ("i want to climb down now")
-  const hasPhrase = (phrase) => new RegExp(`(^|\\s)${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`).test(input)
-  for (const ex of exits) {
-    for (const a of ex.aliases || []) if (a.length > 3 && hasPhrase(String(a).toLowerCase())) return ex
+  // 4. a multi-word alias phrase inside a short input ("i want to climb down now")
+  if (words.length <= 6) {
+    const hasPhrase = (phrase) => new RegExp(`(^|\\s)${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`).test(input)
+    for (const ex of exits) {
+      for (const a of ex.aliases || []) {
+        const al = String(a).toLowerCase()
+        if (al.includes(' ') && hasPhrase(al)) return ex
+      }
+    }
   }
   return null
 }

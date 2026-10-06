@@ -61,7 +61,7 @@ export function matchScore(obj, ref) {
 }
 
 // Find the best matching objects among candidates. Returns { matches, best }.
-export function matchObjects(ref, candidates) {
+export function matchObjects(ref, candidates, ownerHint = null) {
   const norm = normalizeRef(ref)
   if (!norm) return { matches: [], best: null }
   let best = 0
@@ -74,6 +74,16 @@ export function matchObjects(ref, candidates) {
   let matches = scored.filter(x => x.s === best).map(x => x.obj)
   // Things and players outrank exits when a word fits both ("door").
   if (matches.length > 1 && matches.some(m => m.kind !== 'exit')) matches = matches.filter(m => m.kind !== 'exit')
+  // A full-name match outranks an alias match.
+  if (matches.length > 1) {
+    const byName = matches.filter(m => String(m.name).toLowerCase() === norm)
+    if (byName.length === 1) matches = byName
+  }
+  // Your own creations outrank copies of the house's items ("book": your guestbook, not the tome).
+  if (matches.length > 1 && ownerHint) {
+    const mine = matches.filter(m => m.owner === ownerHint && !m.flags?.copyOf)
+    if (mine.length === 1) matches = mine
+  }
   return { matches, best: matches.length === 1 ? matches[0] : null }
 }
 
@@ -124,8 +134,10 @@ export function exitVisible(ex, player) {
   return true
 }
 
+// Returns the flag's value (not just truthiness): counters and strings live here too.
 export function playerFlag(player, key) {
-  return !!(player.props?.flags && player.props.flags[key])
+  const v = player.props?.flags ? player.props.flags[key] : undefined
+  return v === undefined ? false : v
 }
 
 export function setPlayerFlag(player, key, value = true) {
@@ -177,9 +189,16 @@ export function resolveRef(player, ref, opts = {}) {
   } else {
     candidates = candidatesFor(player, opts)
   }
-  const { matches, best } = matchObjects(ref, candidates)
+  let { matches, best } = matchObjects(ref, candidates, player.id)
   if (best) return { obj: best }
   if (matches.length > 1) return { obj: null, reason: 'ambiguous', matches }
+  // "the journal on the desk" -> "journal"
+  const head = String(ref).toLowerCase().replace(/\s+(on|in|at|by|near|under|behind|beside|from|inside|against|above|below)\s+.*$/, '')
+  if (head !== String(ref).toLowerCase()) {
+    ({ matches, best } = matchObjects(head, candidates, player.id))
+    if (best) return { obj: best }
+    if (matches.length > 1) return { obj: null, reason: 'ambiguous', matches }
+  }
   // fall back: anything the player owns anywhere (builders referencing their stuff)
   if (opts.allowOwned !== false) {
     const owned = matchObjects(ref, store.ownedBy(player.id))

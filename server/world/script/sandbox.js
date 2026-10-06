@@ -19,7 +19,7 @@ import { PRELUDE } from './prelude.js'
 export const LIMITS = {
   cpuMs: 80, memoryBytes: 24 * 1024 * 1024, codeBytes: 8000, verbsPerObject: 30,
   maxEffects: 300, maxTells: 80, maxDepth: 5, maxCreates: 5, propBytes: 4000, propsPerObject: 120,
-  maxForks: 10,
+  maxForks: 10, maxAnnounces: 40,
 }
 
 const PROTECTED_PROPS = new Set(['tokens', 'passwordHash', 'flags', 'phase', 'registered', 'quota', 'dest', 'requiresFlag', 'seedKey', 'logbooks', 'mail', 'visited', 'lastSeen', 'home', 'passwordSource', 'programmerSince'])
@@ -67,6 +67,7 @@ class Tx {
     this.removes = new Set()
     this.tells = []            // { to, text }
     this.announces = []        // { roomId, text, except }
+    this.outbox = []           // tells and announces in the order they were made
     this.forks = []
     this.cancels = []
     this.effects = 0
@@ -195,7 +196,8 @@ function hostOps(tx) {
       if (o.kind !== 'player') return { value: false }
       tx.effect()
       if (tx.tells.length >= LIMITS.maxTells) throw new Error('too many tells in one verb')
-      tx.tells.push({ to: o.id, text: String(text).slice(0, 2000) })
+      const t = { to: o.id, text: String(text).slice(0, 2000) }
+      tx.tells.push(t); tx.outbox.push({ kind: 'tell', ...t })
       return { value: true }
     },
     announce({ roomId, text, except, all }) {
@@ -205,11 +207,14 @@ function hostOps(tx) {
       const room = requireObj(rid, 'room')
       if (room.kind !== 'room') {
         // announce inside a container/vehicle: to players inside it
-        tx.announces.push({ roomId: room.id, text: String(text).slice(0, 2000), except: all ? [] : [...(except || []), player.id] })
+        const a = { roomId: room.id, text: String(text).slice(0, 2000), except: all ? [] : [...(except || []), player.id] }
+        tx.announces.push(a); tx.outbox.push({ kind: 'announce', ...a })
         return { value: true }
       }
       tx.effect()
-      tx.announces.push({ roomId: rid, text: String(text).slice(0, 2000), except: all ? (except || []) : [...(except || []), player.id] })
+      if (tx.announces.length >= LIMITS.maxAnnounces) throw new Error('too many announces in one verb')
+      const a = { roomId: rid, text: String(text).slice(0, 2000), except: all ? (except || []) : [...(except || []), player.id] }
+      tx.announces.push(a); tx.outbox.push({ kind: 'announce', ...a })
       return { value: true }
     },
     move({ id, dest }) {
@@ -291,7 +296,7 @@ function hostOps(tx) {
       return { value: { code: found.verb.code, thisId: o.id } }
     },
     locked({ id }) { const o = requireObj(id); return { value: !!o.props?.lock && !passesLock(player, o.props.lock) } },
-    log({ text }) { tx.tells.push({ to: me.id, text: `[${ctx.thisObj.name}:${ctx.verb}] ${String(text).slice(0, 500)}`, debug: true }); return { value: true } },
+    log({ text }) { const t = { to: me.id, text: `[${ctx.thisObj.name}:${ctx.verb}] ${String(text).slice(0, 500)}`, debug: true }; tx.tells.push(t); tx.outbox.push({ kind: 'tell', ...t }); return { value: true } },
   }
 }
 
@@ -341,9 +346,11 @@ function commit(tx) {
     killTasksFor(id)
     store.remove(id)
   }
-  // messages
-  for (const t of tx.tells) tellPlayer(t.to, t.text, t.debug ? 'dim' : 'output')
-  for (const a of tx.announces) announceRoom(real(a.roomId), a.text, { except: a.except, style: 'output' })
+  // messages, in the order the script produced them
+  for (const m of tx.outbox) {
+    if (m.kind === 'tell') tellPlayer(m.to, m.text, m.debug ? 'dim' : 'output')
+    else announceRoom(real(m.roomId), m.text, { except: m.except, style: 'output' })
+  }
   // tasks
   for (const verb of tx.cancels) {
     const tasks = (store.meta.tasks || []).filter(t => !(t.obj === ctx.thisObj.id && (!verb || t.verb === verb)))

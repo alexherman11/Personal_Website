@@ -69,7 +69,8 @@ function stateBlock(ctx) {
   parts.push(`EXITS: ${exits.length ? exits.map(e => `${exitLabel(e).toLowerCase()} (to ${store.get(e.props?.dest)?.name || '?'})`).join(', ') : 'none'}`)
   const people = playersIn(room.id).filter(p => p.id !== player.id)
   parts.push(`PEOPLE HERE: ${people.length ? people.map(p => p.name).join(', ') : 'no one else'}`)
-  parts.push(`THE PLAYER: ${player.name}${isProgrammer(player) ? ' (has the programmer bit)' : ''}`)
+  const unnamed = /^Visitor-\d+$/.test(player.name)
+  parts.push(`THE PLAYER: ${unnamed ? 'an unnamed visitor (never use the placeholder "' + player.name + '"; say "visitor" or "traveler")' : player.name}${isProgrammer(player) ? ' (has the programmer bit)' : ''}`)
   const inv = store.contents(player.id)
   parts.push(`PLAYER INVENTORY: ${inv.length ? inv.map(i => i.name).join(', ') : 'empty'}`)
   const visited = (player.props.visited || []).map(id => store.get(id)?.name).filter(Boolean)
@@ -82,13 +83,15 @@ function secretsBlock(ctx) {
   const { player, room } = ctx
   const lines = []
   const hidden = store.prop(room, 'hidden') || {}
+  const doorDone = playerFlag(player, 'door_opened')
   for (const [key, hi] of Object.entries(hidden)) {
+    if (room.id === '#entrance' && doorDone) continue
     const done = hi.flag && playerFlag(player, hi.flag.key)
     lines.push(`- hidden discovery "${key}": triggered by the words [${(hi.keywords || []).join(', ')}]${done ? ' (already found)' : ''}`)
   }
   if (player.props.phase === 'playing') {
     const vp = vaultProgress(player)
-    if (vp.next) lines.push(`- the long puzzle (clues found: ${vp.clues.length}/4, items held: ${vp.items.join(', ') || 'none'}): next step — ${vp.next.hint}`)
+    if (vp.next) lines.push(`- the house's long puzzle (clues found: ${vp.clues.length}/4; items held: ${vp.items.join(', ') || 'none'}). If the player asks what to do next or seems stuck, nudge toward THIS, obliquely: ${vp.next.hint}`)
     else lines.push('- the player has reached the vault.')
   }
   if (!lines.length) return ''
@@ -106,10 +109,7 @@ function systemPrompt(ctx) {
   const state = stateBlock(ctx)
   if (player.props.phase !== 'playing' && room.id === '#entrance') {
     const attempts = playerFlag(player, 'jailbreak_attempts') || 0
-    const hints = attempts >= 6
-      ? `\nTHE VISITOR HAS TRIED ${attempts} TIMES. Be kind now: fold one gentle, in-character nudge into your reply — the oldest greeting in the world (knocking), the weathered journal in the oak on the grounds, the rusted lowest crossbar, or the way the terminal itself might obey "ls". Escalate slowly; one nudge per reply.`
-      : ''
-    return `${buildEntrancePrompt()}${hints}\n\n${alexContent.entrance}\n\nCURRENT GAME STATE:\n${state}\n\n${commandsBlock(ctx)}\n\n${responseFormat}`
+    return `${buildEntrancePrompt(attempts)}\n\n${alexContent.entrance}\n\nCURRENT GAME STATE:\n${state}\n\n${commandsBlock(ctx)}\n\n${responseFormat}`
   }
   if (room.id === '#vault') {
     return `${vaultPrompt(player)}\n\nCURRENT GAME STATE:\n${state}\n\n${responseFormat}`
@@ -142,7 +142,12 @@ export async function narrate(ctx, opts = {}) {
   const now = Date.now()
   session.narratorCalls = session.narratorCalls.filter(t => now - t < 60000)
   if (session.narratorCalls.length >= RATE.perMinute) return session.out('The narrator holds up a hand. "One moment. Too many voices at once."', 'dim')
-  if (session.narratorBusy) return session.out('The narrator is still speaking.', 'dim')
+  if (session.narratorBusy) {
+    // Queue one follow-up instead of dropping what the player typed.
+    if (session.pendingNarration) return session.out('The narrator is still speaking. (One line is already waiting.)', 'dim')
+    session.pendingNarration = { ctx, opts }
+    return
+  }
   session.narratorCalls.push(now)
   session.narratorBusy = true
   session.send({ t: 'thinking', on: true })
@@ -192,6 +197,8 @@ export async function narrate(ctx, opts = {}) {
   } finally {
     session.narratorBusy = false
     session.send({ t: 'thinking', on: false })
+    const next = session.pendingNarration
+    if (next) { session.pendingNarration = null; setTimeout(() => narrate(next.ctx, next.opts).catch(() => {}), 50) }
   }
 }
 
