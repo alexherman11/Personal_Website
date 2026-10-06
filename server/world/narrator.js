@@ -160,7 +160,8 @@ export async function narrate(ctx, opts = {}) {
     const messages = [...session.history.slice(-12), { role: 'user', content: userMsg }]
     const client = await getClient()
     const response = await client.messages.create({ model: MODEL, max_tokens: 700, system, messages })
-    let raw = (response.content?.[0]?.text || '').trim()
+    // Current models return a thinking block first; the narration is the text blocks.
+    let raw = (response.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim()
     raw = raw.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()
     let narrative = raw, doCmd = null
     try {
