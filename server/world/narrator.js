@@ -18,7 +18,40 @@ import { verbUsage } from './commands/basic.js'
 
 const MODEL = process.env.NARRATOR_MODEL || 'claude-sonnet-5-5'
 const EFFORT = process.env.NARRATOR_EFFORT || 'medium'
+const FALLBACK_MODEL = process.env.NARRATOR_FALLBACK_MODEL || 'claude-sonnet-5'
+// Thinking tokens count against max_tokens; 700 left no room for the answer.
+const MAX_TOKENS = 2048
 const RATE = { perMinute: 14 }
+
+const textOf = r => (r?.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim()
+
+function describeError(err) {
+  return `status=${err.status ?? '-'} type=${err.error?.error?.type ?? err.name} request_id=${err.requestID ?? err.headers?.get?.('request-id') ?? '-'} msg=${err.message}`
+}
+
+// Primary: the tuned beta call. If it throws (except auth/rate-limit, where a
+// retry can't help) or comes back with no text, retry once on the plain
+// endpoint with a known-good model so one bad parameter can't take the narrator down.
+async function generate(client, system, messages) {
+  try {
+    const r = await client.beta.messages.create({
+      model: MODEL, max_tokens: MAX_TOKENS, system, messages,
+      betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
+      output_config: { effort: EFFORT },
+    })
+    const text = textOf(r)
+    if (text) return text
+    console.error(`[narrator] ${MODEL} returned no text (stop_reason=${r.stop_reason} blocks=${(r.content || []).map(b => b.type).join(',') || 'none'})`)
+  } catch (err) {
+    console.error(`[narrator] ${MODEL} failed: ${describeError(err)}`)
+    if (err.status === 401 || err.status === 429) throw err
+  }
+  const r = await client.messages.create({ model: FALLBACK_MODEL, max_tokens: MAX_TOKENS, system, messages })
+  const text = textOf(r)
+  if (!text) throw new Error(`empty response from ${FALLBACK_MODEL} (stop_reason=${r.stop_reason})`)
+  console.warn(`[narrator] served by fallback model ${FALLBACK_MODEL}`)
+  return text
+}
 
 const responseFormat = `
 RESPONSE FORMAT:
@@ -160,15 +193,7 @@ export async function narrate(ctx, opts = {}) {
     const userMsg = intentMessage(ctx, opts)
     const messages = [...session.history.slice(-12), { role: 'user', content: userMsg }]
     const client = await getClient()
-    // Beta messages endpoint: server-side refusal fallbacks ("default" routes by
-    // category) and an effort level tuned for short in-character narration.
-    const response = await client.beta.messages.create({
-      model: MODEL, max_tokens: 700, system, messages,
-      betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
-      output_config: { effort: EFFORT },
-    })
-    // Current models return a thinking block first; the narration is the text blocks.
-    let raw = (response.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim()
+    let raw = await generate(client, system, messages)
     raw = raw.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()
     let narrative = raw, doCmd = null
     try {
@@ -197,7 +222,7 @@ export async function narrate(ctx, opts = {}) {
       await handleLine(session, doCmd, { fromNarrator: true })
     }
   } catch (err) {
-    console.error('[narrator]', err.message)
+    console.error(`[narrator] giving up: ${describeError(err)}`)
     const msg = err.status === 429 ? 'The narrator holds up a hand. "One moment. Too many voices at once."'
       : err.status === 401 ? "The narrator's voice fades to static. Something is wrong with the connection to the deeper systems."
       : 'The narrator pauses, momentarily lost in thought. Perhaps try again.'
