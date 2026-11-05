@@ -24,7 +24,20 @@ const FALLBACK_MODEL = process.env.NARRATOR_FALLBACK_MODEL || 'claude-sonnet-5'
 const MAX_TOKENS = 2048
 const RATE = { perMinute: 14 }
 
-const textOf = r => (r?.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim()
+// The model sometimes writes a tool call (<invoke name="x">…) into its text even
+// though no tools are defined. Players must never see it and it must not enter history.
+const TOOL_BLOCK = /<(?:antml:)?(function_calls|invoke|tool_use)\b[\s\S]*?<\/(?:antml:)?\1>/gi
+const TOOL_TAG = /<\/?(?:antml:)?(?:function_calls|invoke|parameter|tool_use|tool_result|thinking)\b[^>]*>/gi
+export function stripToolMarkup(s) {
+  return s.replace(TOOL_BLOCK, '').replace(TOOL_TAG, '').replace(/\n{3,}/g, '\n\n').trim()
+}
+
+const textOf = r => {
+  const raw = (r?.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim()
+  const clean = stripToolMarkup(raw)
+  if (clean !== raw) console.warn('[narrator] stripped tool-call markup from the model response')
+  return clean
+}
 
 // Primary: the tuned beta call. If it throws (except auth/rate-limit, where a
 // retry can't help) or comes back with no text, retry once on the plain
@@ -52,7 +65,7 @@ async function generate(client, system, messages) {
 
 const responseFormat = `
 RESPONSE FORMAT:
-Respond with valid JSON only. No markdown, no code fences, nothing outside the JSON.
+Respond with valid JSON only. No markdown, no code fences, nothing outside the JSON. You have no tools: never write tool calls or XML-style tags such as <invoke>.
 { "narrative": "What the player sees. 1-4 sentences.", "do": null }
 - "narrative" is required.
 - "do" is optional: the exact text of ONE command from COMMANDS THE PLAYER COULD TYPE or an exit from EXITS, when the player's words clearly mean that command and nothing else (e.g. "walk through the east door" -> "east"; "pick up the compass" -> "take compass"; "press the red button" -> "push button"). The engine runs it right after your narrative and prints its own result, so keep your narrative to the moment (1-2 sentences) and never describe the outcome yourself. Never put anything in "do" that is not listed. When unsure, leave it null and narrate.`

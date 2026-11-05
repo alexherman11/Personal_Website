@@ -83,9 +83,11 @@ const Terminal = forwardRef(function Terminal({ onCommand, disabled: externalDis
     const tick = () => {
       if (charIndex <= text.length) {
         setCurrentlyTypingText(text.slice(0, charIndex))
-        if (charIndex > 0 && text[charIndex - 1] !== ' ') playKeystroke()
+        const typed = charIndex > 0 && text[charIndex - 1] !== ' '
         charIndex++
+        // Schedule the next tick before any side effect so nothing can kill the chain.
         timerRef.current = setTimeout(tick, speed)
+        if (typed) playKeystroke()
       } else {
         // Done — commit the line and process next
         setCurrentlyTypingText(null)

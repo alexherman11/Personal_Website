@@ -19,10 +19,18 @@ function getKeystrokeSynth() {
   return keystrokeSynth
 }
 
+// The typewriter calls this up to ~125x/sec. Tone's NoiseSynth throws if retriggered
+// on the same audio-clock time, so cap the rate; a sound glitch must never throw.
+let lastKeystrokeAt = 0
 export function keystroke() {
   if (!audioEngine.initialized) return
-  const synth = getKeystrokeSynth()
-  if (synth) synth.triggerAttackRelease('32n')
+  const now = performance.now()
+  if (now - lastKeystrokeAt < 35) return
+  lastKeystrokeAt = now
+  try {
+    const synth = getKeystrokeSynth()
+    if (synth) synth.triggerAttackRelease('32n')
+  } catch { /* cosmetic */ }
 }
 
 export function roomTransition() {
