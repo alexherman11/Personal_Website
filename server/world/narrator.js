@@ -3,6 +3,7 @@
 // player said into one real command ("do"), which the engine then runs the
 // same way it would if the player had typed it. It cannot create anything.
 import { getClient } from '../auth/claudeAuth.js'
+import { describeError, narratorOk, narratorFailed } from '../alerts.js'
 import basePrompt from '../prompts/basePrompt.js'
 import buildEntrancePrompt from '../prompts/entrancePrompt.js'
 import alexContent from '../prompts/alexContent.js'
@@ -24,10 +25,6 @@ const MAX_TOKENS = 2048
 const RATE = { perMinute: 14 }
 
 const textOf = r => (r?.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim()
-
-function describeError(err) {
-  return `status=${err.status ?? '-'} type=${err.error?.error?.type ?? err.name} request_id=${err.requestID ?? err.headers?.get?.('request-id') ?? '-'} msg=${err.message}`
-}
 
 // Primary: the tuned beta call. If it throws (except auth/rate-limit, where a
 // retry can't help) or comes back with no text, retry once on the plain
@@ -194,6 +191,7 @@ export async function narrate(ctx, opts = {}) {
     const messages = [...session.history.slice(-12), { role: 'user', content: userMsg }]
     const client = await getClient()
     let raw = await generate(client, system, messages)
+    narratorOk()
     raw = raw.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()
     let narrative = raw, doCmd = null
     try {
@@ -223,6 +221,7 @@ export async function narrate(ctx, opts = {}) {
     }
   } catch (err) {
     console.error(`[narrator] giving up: ${describeError(err)}`)
+    narratorFailed(err, MODEL)
     const msg = err.status === 429 ? 'The narrator holds up a hand. "One moment. Too many voices at once."'
       : err.status === 401 ? "The narrator's voice fades to static. Something is wrong with the connection to the deeper systems."
       : 'The narrator pauses, momentarily lost in thought. Perhaps try again.'
