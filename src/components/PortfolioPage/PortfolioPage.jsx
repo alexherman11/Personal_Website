@@ -3,7 +3,7 @@ import projects from '../../data/projects'
 import SimpleMarkdown from './SimpleMarkdown'
 import './PortfolioPage.css'
 
-const BIO = "I'm a passionate, skilled, conscious human being. I love working with language models. I care deeply about improving education, building community and protecting the world from the bad guys. I make art, food, and coding projects in my free time. Currently I'm working on a social media app called Agora."
+const BIO = "I'm a passionate, skilled, conscious human being. I love working with language models. I care deeply about improving education, building community and protecting the world from the bad guys. I make art, food, and coding projects in my free time. Currently I'm working on a new protocol for connecting people and technology called Agora."
 
 export default function PortfolioPage({ onBack, onMenuSelect }) {
   const [expandedId, setExpandedId] = useState(null)
@@ -39,7 +39,7 @@ export default function PortfolioPage({ onBack, onMenuSelect }) {
         {/* Contact */}
         <div className="portfolio__contact">
           <span className="portfolio__contact-label" aria-hidden="true">&gt;</span>
-          <span>SLO, CA</span>
+          <span>Santa Cruz, CA</span>
           <span className="portfolio__sep">·</span>
           <a href="https://github.com/alexherman11" target="_blank" rel="noopener noreferrer">
             GitHub

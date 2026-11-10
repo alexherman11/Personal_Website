@@ -338,7 +338,36 @@
 
 /* ── Responsive ── */
 
+/* Code and ASCII diagrams: verbatim, scroll inside the card, never the page */
+.simple-md__pre {
+  /* Fira Mono has box-drawing glyphs at its letter width; Plex Mono does not */
+  font-family: 'Fira Mono', var(--font-mono);
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--color-primary);
+  white-space: pre;
+  overflow-x: auto;
+  margin: 0 0 14px 0;
+  padding: 10px 12px;
+  border-left: 1px solid var(--color-dim);
+  cursor: text;
+}
+
+.simple-md__a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.simple-md__a:hover {
+  text-shadow: 0 0 6px var(--color-primary);
+}
+
 @media (max-width: 480px) {
+  .simple-md__pre {
+    font-size: 10px;
+  }
+
   .portfolio {
     padding: 24px 16px 60px;
   }

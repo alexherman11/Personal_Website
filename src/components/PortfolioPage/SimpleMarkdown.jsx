@@ -1,6 +1,7 @@
 /**
  * Lightweight markdown renderer for project descriptions.
- * Supports: #### headings, **bold**, - bullet lists, paragraphs.
+ * Supports: #### headings, **bold**, [links](url), - bullet lists,
+ * ``` fenced blocks (code and ASCII diagrams, shown verbatim), paragraphs.
  */
 export default function SimpleMarkdown({ text }) {
   if (!text) return null
@@ -16,6 +17,19 @@ export default function SimpleMarkdown({ text }) {
     // Skip empty lines
     if (line.trim() === '') {
       i++
+      continue
+    }
+
+    // ``` fenced block: kept verbatim, whitespace and all
+    if (line.trimStart().startsWith('```')) {
+      const body = []
+      i++
+      while (i < lines.length && !lines[i].trimStart().startsWith('```')) {
+        body.push(lines[i])
+        i++
+      }
+      i++ // closing fence
+      blocks.push({ type: 'pre', content: body.join('\n'), key: `pre-${blockKey++}` })
       continue
     }
 
@@ -43,7 +57,8 @@ export default function SimpleMarkdown({ text }) {
       i < lines.length &&
       lines[i].trim() !== '' &&
       !lines[i].startsWith('#### ') &&
-      !lines[i].trimStart().startsWith('- ')
+      !lines[i].trimStart().startsWith('- ') &&
+      !lines[i].trimStart().startsWith('```')
     ) {
       paraLines.push(lines[i])
       i++
@@ -58,6 +73,13 @@ export default function SimpleMarkdown({ text }) {
       {blocks.map((block) => {
         if (block.type === 'h4') {
           return <h4 key={block.key} className="simple-md__h4">{block.content}</h4>
+        }
+        if (block.type === 'pre') {
+          return (
+            <pre key={block.key} className="simple-md__pre" onClick={e => e.stopPropagation()}>
+              {block.content}
+            </pre>
+          )
         }
         if (block.type === 'ul') {
           return (
@@ -80,12 +102,27 @@ export default function SimpleMarkdown({ text }) {
   )
 }
 
-/** Renders **bold** spans within text */
+/** Renders **bold** spans and [text](url) links within text */
 function InlineMarkdown({ text }) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/)
+  const parts = text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)\s]+\))/)
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={i}>{part.slice(2, -2)}</strong>
+    }
+    const link = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(part)
+    if (link) {
+      const external = /^https?:/.test(link[2])
+      return (
+        <a
+          key={i}
+          href={link[2]}
+          className="simple-md__a"
+          {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          onClick={e => e.stopPropagation()}
+        >
+          {link[1]}
+        </a>
+      )
     }
     return <span key={i}>{part}</span>
   })
